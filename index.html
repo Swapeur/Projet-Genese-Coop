@@ -49,6 +49,10 @@
     @keyframes particleFly { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
     @keyframes passiveFly { 0% { opacity: 0.6; } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
 
+    .bonus-mutation { position: absolute; font-size: 4em; cursor: pointer; filter: drop-shadow(0 0 10px var(--viral-green)); animation: pulseBonus 0.5s infinite alternate, popIn 0.3s ease-out; z-index: 1000; user-select: none; }
+    @keyframes pulseBonus { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
+    @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
+
     h2 { color: var(--text-color); margin-bottom: 10px; padding-left: 5px; border-left: 3px solid var(--title-color); }
     .store-item { background-color: #21262d; border: 1px solid var(--border-color); border-radius: 5px; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s, border-color 0.2s; }
     .store-item:hover { background-color: #30363d; border-color: var(--title-color); }
@@ -142,7 +146,8 @@
     const Sound = {
       click: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15); },
       buy: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'triangle'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); },
-      chat: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); }
+      chat: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); },
+      bonus: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
     };
 
     let lastState = null; let lastUpdate = Date.now(); let currentScore = 0; let currentClickValue = 1;
@@ -201,24 +206,54 @@
       chatMsg.scrollTop = chatMsg.scrollHeight; 
     });
 
+    // --- BONUS EVENT ---
+    socket.on('spawn_bonus', (data) => {
+      const bonus = document.createElement('div');
+      bonus.className = 'bonus-mutation';
+      bonus.innerText = '☣️'; 
+      const x = Math.random() * (window.innerWidth - 100) + 50;
+      const y = Math.random() * (window.innerHeight - 100) + 50;
+      bonus.style.left = x + 'px';
+      bonus.style.top = y + 'px';
+      bonus.id = data.id; 
+      bonus.onclick = (e) => {
+        if(!e.isTrusted) return; 
+        socket.emit('click_bonus', data.id);
+        Sound.bonus();
+        bonus.remove(); 
+        spawnFloatingText(e, "MUTATION !");
+      };
+      document.body.appendChild(bonus);
+      setTimeout(() => { if(bonus.parentNode) bonus.remove(); }, 10000);
+    });
+
     const builds = { 'mutation_mineure': 'b-mutation', 'vecteur_oiseau': 'b-oiseau', 'contamination_eau': 'b-eau', 'transmission_aerosol': 'b-aerosol', 'aeroport_international': 'b-aeroport', 'fermes_virales': 'b-ferme', 'centres_contagion': 'b-centre', 'propagande_virale': 'b-propagande', 'satellite_dispersion': 'b-satellite', 'clonage_humain': 'b-clonage', 'terraformation_virale': 'b-terraformation', 'singularite_biologique': 'b-singularite' };
     function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost" style="color:var(--viral-green)">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
     for(let k in builds) { const el = document.getElementById(builds[k]); el.onclick = () => { if(!lastState) return; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); if(currentScore >= cost) { socket.emit('buy_upgrade', k); el.classList.add('purchased-anim'); setTimeout(()=>el.classList.remove('purchased-anim'),300); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; }
     
-    // --- CLIENT SIMPLE (PAS D'ENVOI DE COORDONNÉES) ---
+    // --- CLIC SIMPLE ---
     cellBtn.onclick = (e) => { 
-      // Seule sécurité client : Le navigateur garantit que c'est un humain
       if (!e.isTrusted) return; 
-      
-      socket.emit('click_cell'); // Pas d'arguments, le serveur n'en a plus besoin
-      
+      socket.emit('click_cell'); 
       cellBtn.classList.add('clicked'); 
       setTimeout(()=>cellBtn.classList.remove('clicked'),100); 
       spawnParticle(cellBtn, 5); 
       spawnFloatingText(e, currentClickValue); 
       Sound.click(); 
     };
+
+    function spawnFloatingText(e, amount) { 
+      const el = document.createElement('div'); 
+      el.className = 'float-text'; 
+      el.innerText = (typeof amount === 'string' ? '' : '+') + (typeof amount === 'number' ? formatNumber(amount) : amount); 
+      let x = e.clientX; let y = e.clientY; 
+      if(!x && !y) { const rect = cellBtn.getBoundingClientRect(); x = rect.left + rect.width/2; y = rect.top + rect.height/2; } 
+      x += (Math.random() - 0.5) * 30; 
+      el.style.left = x + 'px'; el.style.top = y + 'px'; 
+      document.body.appendChild(el); 
+      setTimeout(() => el.remove(), 800); 
+    }
 
     document.getElementById('btn-reset').onclick = () => { if(confirm('Prestige ? Reset complet vs PR.')) socket.emit('do_prestige'); }; document.getElementById('btn-meta').onclick = () => { document.getElementById('modal-backdrop').style.display = 'flex'; renderPrestigeShop(); }; document.getElementById('modal-backdrop').onclick = (e) => { if(e.target.id === 'modal-backdrop') e.target.style.display = 'none'; };
 

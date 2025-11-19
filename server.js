@@ -13,19 +13,22 @@ const rateLimit = require('express-rate-limit');
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));
 
-// --- CONSTANTES ---
+// --- CONSTANTES JEU ---
 const TICK_RATE_MS = 200; 
 const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 
-// REGLAGES "ZERO BAN"
-const CLICK_COOLDOWN_MS = 40; // Max 25 clics/seconde (Plafond physique)
+// REGLAGES JEU
+const CLICK_COOLDOWN_MS = 40; // Plafond physique (25 clics/s)
 const MAX_TABS_PER_DEVICE = 3; 
-
 const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
+
+// REGLAGES BONUS (MUTATIONS)
+const BONUS_CHANCE_PER_TICK = 0.005; // ~0.5% par tick (toutes les 40s en moy.)
+const BONUS_REWARD_SECONDS = 300; // Gain = 5 minutes de production
 
 // Variables
 let currentTickClicks = 0;
@@ -92,7 +95,6 @@ const defaultGameState = {
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
 
-// ÉQUILIBRAGE : Compte uniquement les joueurs nommés
 function getPlayerScalingFactor() { 
   let activePlayers = 0;
   for (const [_, stats] of playerStats) {
@@ -200,7 +202,8 @@ io.on('connection', (socket) => {
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   
-  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0, hasCustomName: false });
+  // Initialisation sans ban
+  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0, hasCustomName: false, activeBonusId: null });
   
   lastClickTime.set(socket.id, 0);
   sendFullUpdate(socket);
@@ -217,23 +220,18 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- GESTION CLIC (Mode "Zero Ban") ---
   socket.on('click_cell', () => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
 
-    // 1. Pseudo requis
-    if (!stats.hasCustomName) return; 
+    if (!stats.hasCustomName) return; // Pseudo requis
 
-    // 2. Plafond de vitesse (Speed Cap)
-    // On ignore simplement si c'est trop rapide
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
-    if (now - last < CLICK_COOLDOWN_MS) return; 
+    if (now - last < CLICK_COOLDOWN_MS) return; // Vitesse plafond (pas de ban)
     
     lastClickTime.set(socket.id, now);
     
-    // --- CLIC VALIDÉ ---
     gameState.totalClicks++; currentTickClicks++;
     const base = gameState.clickPower;
     const bonus = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
@@ -241,6 +239,21 @@ io.on('connection', (socket) => {
     
     stats.clicks++; stats.contribution += total;
     gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
+  });
+
+  // --- BONUS ALÉATOIRES ---
+  socket.on('click_bonus', (bonusId) => {
+    const stats = playerStats.get(socket.id);
+    if (!stats || !stats.activeBonusId) return;
+    if (stats.activeBonusId === bonusId) {
+        const reward = Math.max(1000, gameState.cellsPerSecond * BONUS_REWARD_SECONDS);
+        gameState.totalInfectedCells += reward;
+        gameState.totalCellsEver += reward;
+        stats.contribution += reward;
+        stats.activeBonusId = null;
+        const cleanName = xss(stats.name);
+        io.emit('chat_message', { user: "Système", text: `🧬 ${cleanName} a déclenché une Mutation Instable (+${Math.floor(reward)}) !` });
+    }
   });
 
   socket.on('buy_upgrade', (name) => {
@@ -309,7 +322,6 @@ io.on('connection', (socket) => {
     if(typeof msg !== 'string') return;
     
     const stats = playerStats.get(socket.id);
-    // Anti-Bot Chat (50 clics requis)
     if (!stats || !stats.hasCustomName || stats.clicks < CHAT_UNLOCK_CLICKS) {
         socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
         return;
@@ -333,6 +345,18 @@ io.on('connection', (socket) => {
 });
 
 function gameLoop() {
+  // SPAWN BONUS
+  for (const [socketId, stats] of playerStats) {
+      if (stats.hasCustomName && !stats.activeBonusId) {
+          if (Math.random() < BONUS_CHANCE_PER_TICK) {
+              const bonusId = 'b_' + Math.random().toString(36).substr(2, 9);
+              stats.activeBonusId = bonusId;
+              io.to(socketId).emit('spawn_bonus', { id: bonusId });
+              setTimeout(() => { if (stats.activeBonusId === bonusId) stats.activeBonusId = null; }, 12000);
+          }
+      }
+  }
+
   const scale = getPlayerScalingFactor();
   const scaledGain = gameState.cellsPerSecond / scale;
   const tickGain = scaledGain / (1000 / TICK_RATE_MS);
@@ -344,11 +368,8 @@ function gameLoop() {
   const clickHeat = currentTickClicks / (TICK_RATE_MS / 1000);
   currentTickClicks = 0;
 
-  // Compte uniquement les joueurs nommés
   let activePlayerCount = 0;
-  for (const [_, stats] of playerStats) {
-      if (stats.hasCustomName) activePlayerCount++;
-  }
+  for (const [_, stats] of playerStats) { if (stats.hasCustomName) activePlayerCount++; }
 
   const leaderboard = Array.from(playerStats.values())
       .filter(p => p.hasCustomName)
