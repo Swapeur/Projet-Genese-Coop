@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const io = new Server(http);
 const fs = require('fs');
 
-// --- SÉCURITÉ HTTP ---
+// --- SÉCURITÉ ---
 const xss = require('xss');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -13,26 +13,26 @@ const rateLimit = require('express-rate-limit');
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));
 
-// --- CONSTANTES JEU ---
+// --- CONSTANTES ---
 const TICK_RATE_MS = 200; 
 const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 
-// LIMITES PHYSIQUES (Pas de ban, juste un plafond)
-const CLICK_COOLDOWN_MS = 40; // Max 25 clics/seconde acceptés par le serveur
+// REGLAGES "ZERO BAN"
+const CLICK_COOLDOWN_MS = 40; // Max 25 clics/seconde (Plafond physique)
 const MAX_TABS_PER_DEVICE = 3; 
 
 const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
 
-// Variables volatiles
+// Variables
 let currentTickClicks = 0;
 let lastClickTime = new Map();
 let playerStats = new Map();
 
-// --- DÉFINITIONS BOOSTS ---
+// --- BOOSTS ---
 const BOOST_DEFINITIONS = {
   'seringue_precision': { id: 'seringue_precision', name: 'Seringue de Précision', description: 'Double la puissance de tous les clics.', cost: 2000, conditionType: 'totalClicks', conditionValue: 500 },
   'doigts_bioniques': { id: 'doigts_bioniques', name: 'Doigts Bioniques', description: 'Multiplie la puissance des clics par 3.', cost: 500000, conditionType: 'totalClicks', conditionValue: 2500 },
@@ -92,7 +92,7 @@ const defaultGameState = {
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
 
-// ÉQUILIBRAGE : Compte les joueurs actifs nommés
+// ÉQUILIBRAGE : Compte uniquement les joueurs nommés
 function getPlayerScalingFactor() { 
   let activePlayers = 0;
   for (const [_, stats] of playerStats) {
@@ -212,28 +212,28 @@ io.on('connection', (socket) => {
         const stats = playerStats.get(socket.id);
         if(stats) {
             stats.name = clean;
-            stats.hasCustomName = true; // Déverrouillage
+            stats.hasCustomName = true;
         }
     }
   });
 
+  // --- GESTION CLIC (Mode "Zero Ban") ---
   socket.on('click_cell', () => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
 
-    // SÉCURITÉ 1 : Pas de pseudo = Pas de clic
-    if (!stats.hasCustomName) return;
+    // 1. Pseudo requis
+    if (!stats.hasCustomName) return; 
 
-    // SÉCURITÉ 2 : Speed Limit (40ms) - Juste un plafond, PAS DE BAN
+    // 2. Plafond de vitesse (Speed Cap)
+    // On ignore simplement si c'est trop rapide
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
-    if (now - last < CLICK_COOLDOWN_MS) {
-        return; // On ignore ce clic, mais on ne punit pas
-    }
-
+    if (now - last < CLICK_COOLDOWN_MS) return; 
+    
     lastClickTime.set(socket.id, now);
     
-    // Gains
+    // --- CLIC VALIDÉ ---
     gameState.totalClicks++; currentTickClicks++;
     const base = gameState.clickPower;
     const bonus = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
@@ -244,63 +244,63 @@ io.on('connection', (socket) => {
   });
 
   socket.on('buy_upgrade', (name) => {
-      let bought = false;
-      const checkAndBuy = (key, costKey) => {
-        if(gameState[costKey] === undefined) return false;
-        if (gameState.totalInfectedCells >= gameState[costKey]) {
-          gameState.totalInfectedCells -= gameState[costKey]; gameState[key]++;
-          gameState[costKey] = Math.ceil(defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]));
-          return true;
-        } return false;
-      };
-      if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
-      else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
-      else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
-      else if (name === 'transmission_aerosol') bought = checkAndBuy('transmission_aerosol', 'cost_aerosol');
-      else if (name === 'aeroport_international') bought = checkAndBuy('aeroport_international', 'cost_aeroport');
-      else if (name === 'fermes_virales') bought = checkAndBuy('fermes_virales', 'cost_ferme');
-      else if (name === 'centres_contagion') bought = checkAndBuy('centres_contagion', 'cost_centre');
-      else if (name === 'propagande_virale') bought = checkAndBuy('propagande_virale', 'cost_propagande');
-      else if (name === 'satellite_dispersion') bought = checkAndBuy('satellite_dispersion', 'cost_satellite');
-      else if (name === 'clonage_humain') bought = checkAndBuy('clonage_humain', 'cost_clonage');
-      else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
-      else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
-  
-      if (bought) { applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState); }
-    });
-  
-    socket.on('buy_boost', (id) => {
-      const boost = BOOST_DEFINITIONS[id];
-      if (boost && !gameState.purchasedBoosts.includes(id)) {
-        let cost = boost.cost;
-        if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9;
-        if (gameState.totalInfectedCells >= cost) {
-          gameState.totalInfectedCells -= cost; gameState.purchasedBoosts.push(id);
-          applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
-        }
-      }
-    });
-  
-    socket.on('buy_prestige_upgrade', (id) => {
-      const upg = PRESTIGE_UPGRADE_DEFINITIONS[id];
-      if (upg && !gameState.purchasedPrestigeUpgrades.includes(id)) {
-        if (gameState.prestigePoints >= upg.cost) {
-          gameState.prestigePoints -= upg.cost; gameState.purchasedPrestigeUpgrades.push(id);
-          applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
-        }
-      }
-    });
-  
-    socket.on('do_prestige', () => {
-      const pts = calculatePrestigePoints(gameState.totalCellsEver);
-      if (pts > 0) {
-        const oldPrestige = gameState.prestigePoints; const oldUpgrades = gameState.purchasedPrestigeUpgrades;
-        gameState = JSON.parse(JSON.stringify(defaultGameState));
-        gameState.prestigePoints = oldPrestige + pts; gameState.purchasedPrestigeUpgrades = oldUpgrades;
-        if (gameState.purchasedPrestigeUpgrades.includes('p_kit_demarrage')) gameState.mutations_mineures = 5;
+    let bought = false;
+    const checkAndBuy = (key, costKey) => {
+      if(gameState[costKey] === undefined) return false;
+      if (gameState.totalInfectedCells >= gameState[costKey]) {
+        gameState.totalInfectedCells -= gameState[costKey]; gameState[key]++;
+        gameState[costKey] = Math.ceil(defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]));
+        return true;
+      } return false;
+    };
+    if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
+    else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
+    else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
+    else if (name === 'transmission_aerosol') bought = checkAndBuy('transmission_aerosol', 'cost_aerosol');
+    else if (name === 'aeroport_international') bought = checkAndBuy('aeroport_international', 'cost_aeroport');
+    else if (name === 'fermes_virales') bought = checkAndBuy('fermes_virales', 'cost_ferme');
+    else if (name === 'centres_contagion') bought = checkAndBuy('centres_contagion', 'cost_centre');
+    else if (name === 'propagande_virale') bought = checkAndBuy('propagande_virale', 'cost_propagande');
+    else if (name === 'satellite_dispersion') bought = checkAndBuy('satellite_dispersion', 'cost_satellite');
+    else if (name === 'clonage_humain') bought = checkAndBuy('clonage_humain', 'cost_clonage');
+    else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
+    else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
+
+    if (bought) { applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState); }
+  });
+
+  socket.on('buy_boost', (id) => {
+    const boost = BOOST_DEFINITIONS[id];
+    if (boost && !gameState.purchasedBoosts.includes(id)) {
+      let cost = boost.cost;
+      if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9;
+      if (gameState.totalInfectedCells >= cost) {
+        gameState.totalInfectedCells -= cost; gameState.purchasedBoosts.push(id);
         applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
       }
-    });
+    }
+  });
+
+  socket.on('buy_prestige_upgrade', (id) => {
+    const upg = PRESTIGE_UPGRADE_DEFINITIONS[id];
+    if (upg && !gameState.purchasedPrestigeUpgrades.includes(id)) {
+      if (gameState.prestigePoints >= upg.cost) {
+        gameState.prestigePoints -= upg.cost; gameState.purchasedPrestigeUpgrades.push(id);
+        applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
+      }
+    }
+  });
+
+  socket.on('do_prestige', () => {
+    const pts = calculatePrestigePoints(gameState.totalCellsEver);
+    if (pts > 0) {
+      const oldPrestige = gameState.prestigePoints; const oldUpgrades = gameState.purchasedPrestigeUpgrades;
+      gameState = JSON.parse(JSON.stringify(defaultGameState));
+      gameState.prestigePoints = oldPrestige + pts; gameState.purchasedPrestigeUpgrades = oldUpgrades;
+      if (gameState.purchasedPrestigeUpgrades.includes('p_kit_demarrage')) gameState.mutations_mineures = 5;
+      applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
+    }
+  });
 
   let lastChatTime = 0;
   let lastMessageHash = "";
@@ -309,7 +309,7 @@ io.on('connection', (socket) => {
     if(typeof msg !== 'string') return;
     
     const stats = playerStats.get(socket.id);
-    // SÉCURITÉ CHAT : Pseudo + 50 clics minimum
+    // Anti-Bot Chat (50 clics requis)
     if (!stats || !stats.hasCustomName || stats.clicks < CHAT_UNLOCK_CLICKS) {
         socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
         return;
@@ -344,12 +344,18 @@ function gameLoop() {
   const clickHeat = currentTickClicks / (TICK_RATE_MS / 1000);
   currentTickClicks = 0;
 
+  // Compte uniquement les joueurs nommés
+  let activePlayerCount = 0;
+  for (const [_, stats] of playerStats) {
+      if (stats.hasCustomName) activePlayerCount++;
+  }
+
   const leaderboard = Array.from(playerStats.values())
-      .filter(p => p.hasCustomName) // Seulement les joueurs avec pseudo
+      .filter(p => p.hasCustomName)
       .sort((a, b) => b.contribution - a.contribution)
       .slice(0, 10);
       
-  io.emit('tick_update', { score: gameState.totalInfectedCells, cps: gameState.cellsPerSecond, clickValue: currentClickValue, clickHeat: clickHeat, players: io.sockets.sockets.size, leaderboard: leaderboard });
+  io.emit('tick_update', { score: gameState.totalInfectedCells, cps: gameState.cellsPerSecond, clickValue: currentClickValue, clickHeat: clickHeat, players: activePlayerCount, leaderboard: leaderboard });
 }
 
 setInterval(gameLoop, TICK_RATE_MS);

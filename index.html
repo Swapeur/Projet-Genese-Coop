@@ -206,8 +206,20 @@
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
     for(let k in builds) { const el = document.getElementById(builds[k]); el.onclick = () => { if(!lastState) return; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); if(currentScore >= cost) { socket.emit('buy_upgrade', k); el.classList.add('purchased-anim'); setTimeout(()=>el.classList.remove('purchased-anim'),300); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; }
     
-    cellBtn.onclick = (e) => { socket.emit('click_cell'); cellBtn.classList.add('clicked'); setTimeout(()=>cellBtn.classList.remove('clicked'),100); spawnParticle(cellBtn, 5); spawnFloatingText(e, currentClickValue); Sound.click(); };
-    function spawnFloatingText(e, amount) { const el = document.createElement('div'); el.className = 'float-text'; el.innerText = '+' + formatNumber(amount); let x = e.clientX; let y = e.clientY; if(!x && !y) { const rect = cellBtn.getBoundingClientRect(); x = rect.left + rect.width/2; y = rect.top + rect.height/2; } x += (Math.random() - 0.5) * 30; el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 800); }
+    // --- CLIENT SIMPLE (PAS D'ENVOI DE COORDONNÉES) ---
+    cellBtn.onclick = (e) => { 
+      // Seule sécurité client : Le navigateur garantit que c'est un humain
+      if (!e.isTrusted) return; 
+      
+      socket.emit('click_cell'); // Pas d'arguments, le serveur n'en a plus besoin
+      
+      cellBtn.classList.add('clicked'); 
+      setTimeout(()=>cellBtn.classList.remove('clicked'),100); 
+      spawnParticle(cellBtn, 5); 
+      spawnFloatingText(e, currentClickValue); 
+      Sound.click(); 
+    };
+
     document.getElementById('btn-reset').onclick = () => { if(confirm('Prestige ? Reset complet vs PR.')) socket.emit('do_prestige'); }; document.getElementById('btn-meta').onclick = () => { document.getElementById('modal-backdrop').style.display = 'flex'; renderPrestigeShop(); }; document.getElementById('modal-backdrop').onclick = (e) => { if(e.target.id === 'modal-backdrop') e.target.style.display = 'none'; };
 
     socket.on('tick_update', (d) => { 
