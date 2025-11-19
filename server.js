@@ -6,13 +6,12 @@ const io = new Server(http);
 const fs = require('fs');
 
 // --- MODULES DE SÉCURITÉ ---
-const xss = require('xss'); // Nettoyage des inputs
-const helmet = require('helmet'); // Headers de sécurité HTTP
-const rateLimit = require('express-rate-limit'); // Anti-DDoS léger
+const xss = require('xss');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
-// Configuration Sécurité
-app.use(helmet({ contentSecurityPolicy: false })); // Autorise les scripts inline du client
-app.use(rateLimit({ windowMs: 15*60*1000, max: 100 })); // Limite chargement page
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));
 
 // --- CONSTANTES JEU ---
 const TICK_RATE_MS = 200; 
@@ -20,18 +19,18 @@ const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
-const CLICK_COOLDOWN_MS = 40; // Anti-autoclicker (~25 clics/s max)
-const MAX_TABS_PER_DEVICE = 3; // Max 3 onglets par navigateur
-const CHAT_COOLDOWN_MS = 2000; // SÉCURITÉ : 2 secondes entre chaque message
+const CLICK_COOLDOWN_MS = 40;
+const MAX_TABS_PER_DEVICE = 3; // On garde la limite par navigateur
+const CHAT_COOLDOWN_MS = 2000; // 2 sec entre messages
+const CHAT_UNLOCK_CLICKS = 50; // IL FAUT 50 CLICS POUR PARLER
 
 // Variables volatiles
 let currentTickClicks = 0;
 let lastClickTime = new Map();
-let playerStats = new Map(); // Leaderboard
+let playerStats = new Map();
 
-// --- DÉFINITIONS (Boosts & Bâtiments) ---
+// --- DÉFINITIONS (Je remets tes boosts tels quels) ---
 const BOOST_DEFINITIONS = {
-  // Clics
   'seringue_precision': { id: 'seringue_precision', name: 'Seringue de Précision', description: 'Double la puissance de tous les clics.', cost: 2000, conditionType: 'totalClicks', conditionValue: 500 },
   'doigts_bioniques': { id: 'doigts_bioniques', name: 'Doigts Bioniques', description: 'Multiplie la puissance des clics par 3.', cost: 500000, conditionType: 'totalClicks', conditionValue: 2500 },
   'clics_contamines': { id: 'clics_contamines', name: 'Clics Contaminés', description: 'Chaque clic génère 1% de votre CI/s total.', cost: 10000000, conditionType: 'totalClicks', conditionValue: 10000 },
@@ -39,8 +38,6 @@ const BOOST_DEFINITIONS = {
   'gants_titane': { id: 'gants_titane', name: 'Gants en Titane', description: 'Multiplie la puissance des clics par 5.', cost: 5000000000, conditionType: 'totalClicks', conditionValue: 50000 },
   'rage_virale': { id: 'rage_virale', name: 'Rage Virale', description: 'Multiplie la puissance des clics par 10.', cost: 800000000000, conditionType: 'totalClicks', conditionValue: 100000 },
   'osmose_tactile': { id: 'osmose_tactile', name: 'Osmose Tactile', description: 'Ajoute 2% de votre production totale (CI/s) aux clics.', cost: 5000000000000, conditionType: 'buildingCount', conditionTarget: 'singularite_biologique', conditionValue: 1 },
-
-  // Production T1
   'mutation_boost_clic_t1': { id: 'mutation_boost_clic_t1', name: 'Auto-Click V1', description: 'Les Mutations Mineures boostent les clics (+0.5/u).', cost: 1000, conditionType: 'buildingCount', conditionTarget: 'mutations_mineures', conditionValue: 10 },
   'plumes_aero': { id: 'plumes_aero', name: 'Plumes Aérodynamiques', description: 'Double la production des Vecteurs Oiseaux.', cost: 5000, conditionType: 'buildingCount', conditionTarget: 'vecteurs_oiseaux', conditionValue: 10 },
   'filtres_mutagenes': { id: 'filtres_mutagenes', name: 'Filtres Mutagènes', description: 'Double la production de Contamination Eau.', cost: 12000, conditionType: 'buildingCount', conditionTarget: 'contamination_eau', conditionValue: 10 },
@@ -49,8 +46,6 @@ const BOOST_DEFINITIONS = {
   'nutriments_ameliores': { id: 'nutriments_ameliores', name: 'Nutriments Améliorés', description: 'Double la production des Fermes Virales.', cost: 5500000, conditionType: 'buildingCount', conditionTarget: 'fermes_virales', conditionValue: 10 },
   'gentrification_acceleree': { id: 'gentrification_acceleree', name: 'Gentrification Accélérée', description: 'Double la production des Centres de Contagion.', cost: 55000000, conditionType: 'buildingCount', conditionTarget: 'centres_contagion', conditionValue: 10 },
   'fake_news': { id: 'fake_news', name: 'Fake News', description: 'Double la production de Propagande Virale.', cost: 550000000, conditionType: 'buildingCount', conditionTarget: 'propagande_virale', conditionValue: 10 },
-
-  // Production T2
   'mutation_boost_clic_t2': { id: 'mutation_boost_clic_t2', name: 'Auto-Click V2', description: 'Les Mutations Mineures boostent encore les clics (+1/u).', cost: 50000, conditionType: 'buildingCount', conditionTarget: 'mutations_mineures', conditionValue: 25 },
   'oiseau_t2': { id: 'oiseau_t2', name: 'Migration de Masse', description: 'Double la production des Vecteurs Oiseaux (T2).', cost: 100000, conditionType: 'buildingCount', conditionTarget: 'vecteurs_oiseaux', conditionValue: 25 },
   'eau_t2': { id: 'eau_t2', name: 'Purification Inversée', description: 'Double la production de Contamination Eau (T2).', cost: 250000, conditionType: 'buildingCount', conditionTarget: 'contamination_eau', conditionValue: 25 },
@@ -59,14 +54,10 @@ const BOOST_DEFINITIONS = {
   'ferme_t2': { id: 'ferme_t2', name: 'Culture Intensive', description: 'Double la production des Fermes Virales (T2).', cost: 110000000, conditionType: 'buildingCount', conditionTarget: 'fermes_virales', conditionValue: 25 },
   'centre_t2': { id: 'centre_t2', name: 'Confinement Forcé', description: 'Double la production des Centres de Contagion (T2).', cost: 1100000000, conditionType: 'buildingCount', conditionTarget: 'centres_contagion', conditionValue: 25 },
   'propagande_t2': { id: 'propagande_t2', name: 'Contrôle des Médias', description: 'Double la production de Propagande Virale (T2).', cost: 11000000000, conditionType: 'buildingCount', conditionTarget: 'propagande_virale', conditionValue: 25 },
-
-  // Production T3 (Endgame)
   'sat_t1': { id: 'sat_t1', name: 'Réseau 5G Viral', description: 'Double la production des Satellites.', cost: 15000000000, conditionType: 'buildingCount', conditionTarget: 'satellite_dispersion', conditionValue: 10 },
   'clone_t1': { id: 'clone_t1', name: 'ADN Instable', description: 'Double la production du Clonage Humain.', cost: 200000000000, conditionType: 'buildingCount', conditionTarget: 'clonage_humain', conditionValue: 10 },
   'terra_t1': { id: 'terra_t1', name: 'Atmosphère Toxique', description: 'Double la production de Terraformation.', cost: 3000000000000, conditionType: 'buildingCount', conditionTarget: 'terraformation_virale', conditionValue: 10 },
   'singu_t1': { id: 'singu_t1', name: 'Esprit de Ruche', description: 'Double la production de la Singularité.', cost: 50000000000000, conditionType: 'buildingCount', conditionTarget: 'singularite_biologique', conditionValue: 5 },
-
-  // Synergies & Global
   'contamination_aviaire': { id: 'contamination_aviaire', name: 'Contamination Aviaire', description: 'Chaque Oiseau augmente la production d\'Eau de 1%.', cost: 50000000, conditionType: 'buildingCount', conditionTarget: 'vecteurs_oiseaux', conditionValue: 25, condition2Type: 'buildingCount', condition2Target: 'contamination_eau', condition2Value: 25 },
   'synergie_humide': { id: 'synergie_humide', name: 'Irrigation Infectée', description: 'Chaque Source d\'Eau augmente la production des Fermes de 0.5%.', cost: 5000000000, conditionType: 'buildingCount', conditionTarget: 'contamination_eau', conditionValue: 50, condition2Type: 'buildingCount', condition2Target: 'fermes_virales', conditionValue: 25 },
   'matrice_virale': { id: 'matrice_virale', name: 'Matrice Virale', description: 'Augmente la production de TOUS les bâtiments de 50%.', cost: 100000000000, conditionType: 'buildingCount', conditionTarget: 'centres_contagion', conditionValue: 50 }
@@ -97,7 +88,6 @@ const defaultGameState = {
   singularite_biologique: 0, cost_singularite: 1500000000000, gain_singularite: 8000000000
 };
 
-// --- CALCULS ---
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
 function getPlayerScalingFactor() { const playerCount = io.sockets.sockets.size; if (playerCount <= 4) return 1; return Math.sqrt(playerCount); }
 
@@ -106,9 +96,7 @@ function applyAllPurchasedBoosts(state) {
   if (state.purchasedPrestigeUpgrades.includes('p_efficacite_virale')) prestigeProdBonus = 1.25;
   if (state.purchasedPrestigeUpgrades.includes('p_clics_experts')) prestigeClickBonus = 2;
 
-  // Reset
-  state.clickPower = 1 * prestigeClickBonus; 
-  state.clickPowerBonusFromCPS = 0;
+  state.clickPower = 1 * prestigeClickBonus; state.clickPowerBonusFromCPS = 0;
   
   state.gain_mutation = defaultGameState.gain_mutation * prestigeProdBonus;
   state.gain_oiseau = defaultGameState.gain_oiseau * prestigeProdBonus;
@@ -124,9 +112,8 @@ function applyAllPurchasedBoosts(state) {
   state.gain_singularite = defaultGameState.gain_singularite * prestigeProdBonus;
 
   let synergyBonusWater = 0; let synergyBonusFarms = 0; let globalMultiplier = 1;
-
   for (const boostId of state.purchasedBoosts) {
-    // Clics
+    const b = BOOST_DEFINITIONS[boostId]; if(!b) continue;
     if (boostId === 'seringue_precision') state.clickPower *= 2;
     if (boostId === 'doigts_bioniques') state.clickPower *= 3;
     if (boostId === 'gants_titane') state.clickPower *= 5;
@@ -137,36 +124,24 @@ function applyAllPurchasedBoosts(state) {
     if (boostId === 'mutation_boost_clic_t1') state.clickPower += (0.5 * state.mutations_mineures) * prestigeClickBonus;
     if (boostId === 'mutation_boost_clic_t2') state.clickPower += (1 * state.mutations_mineures) * prestigeClickBonus;
     
-    // Prod
-    if (boostId === 'plumes_aero') state.gain_oiseau *= 2;
-    if (boostId === 'filtres_mutagenes') state.gain_eau *= 2;
-    if (boostId === 'spores_haute_densite') state.gain_aerosol *= 2;
-    if (boostId === 'partenariats_logistiques') state.gain_aeroport *= 2;
-    if (boostId === 'nutriments_ameliores') state.gain_ferme *= 2;
-    if (boostId === 'gentrification_acceleree') state.gain_centre *= 2;
-    if (boostId === 'fake_news') state.gain_propagande *= 2;
+    if (boostId === 'plumes_aero' || boostId === 'oiseau_t2') state.gain_oiseau *= 2;
+    if (boostId === 'filtres_mutagenes' || boostId === 'eau_t2') state.gain_eau *= 2;
+    if (boostId === 'spores_haute_densite' || boostId === 'aerosol_t2') state.gain_aerosol *= 2;
+    if (boostId === 'partenariats_logistiques' || boostId === 'aeroport_t2') state.gain_aeroport *= 2;
+    if (boostId === 'nutriments_ameliores' || boostId === 'ferme_t2') state.gain_ferme *= 2;
+    if (boostId === 'gentrification_acceleree' || boostId === 'centre_t2') state.gain_centre *= 2;
+    if (boostId === 'fake_news' || boostId === 'propagande_t2') state.gain_propagande *= 2;
     if (boostId === 'sat_t1') state.gain_satellite *= 2;
     if (boostId === 'clone_t1') state.gain_clonage *= 2;
     if (boostId === 'terra_t1') state.gain_terraformation *= 2;
     if (boostId === 'singu_t1') state.gain_singularite *= 2;
 
-    if (boostId === 'oiseau_t2') state.gain_oiseau *= 2;
-    if (boostId === 'eau_t2') state.gain_eau *= 2;
-    if (boostId === 'aerosol_t2') state.gain_aerosol *= 2;
-    if (boostId === 'aeroport_t2') state.gain_aeroport *= 2;
-    if (boostId === 'ferme_t2') state.gain_ferme *= 2;
-    if (boostId === 'centre_t2') state.gain_centre *= 2;
-    if (boostId === 'propagande_t2') state.gain_propagande *= 2;
-    
     if (boostId === 'contamination_aviaire') synergyBonusWater += (0.01 * state.vecteurs_oiseaux);
     if (boostId === 'synergie_humide') synergyBonusFarms += (0.005 * state.contamination_eau);
     if (boostId === 'matrice_virale') globalMultiplier *= 1.5;
   }
 
-  state.gain_eau *= (1 + synergyBonusWater);
-  state.gain_ferme *= (1 + synergyBonusFarms);
-
-  // Global
+  state.gain_eau *= (1 + synergyBonusWater); state.gain_ferme *= (1 + synergyBonusFarms);
   state.gain_mutation *= globalMultiplier; state.gain_oiseau *= globalMultiplier; state.gain_eau *= globalMultiplier; state.gain_aerosol *= globalMultiplier; state.gain_aeroport *= globalMultiplier; state.gain_ferme *= globalMultiplier; state.gain_centre *= globalMultiplier; state.gain_propagande *= globalMultiplier; state.gain_satellite *= globalMultiplier; state.gain_clonage *= globalMultiplier; state.gain_terraformation *= globalMultiplier; state.gain_singularite *= globalMultiplier;
 
   state.cellsPerSecond = (state.mutations_mineures * state.gain_mutation) + (state.vecteurs_oiseaux * state.gain_oiseau) + (state.contamination_eau * state.gain_eau) + (state.transmission_aerosol * state.gain_aerosol) + (state.aeroport_international * state.gain_aeroport) + (state.fermes_virales * state.gain_ferme) + (state.centres_contagion * state.gain_centre) + (state.propagande_virale * state.gain_propagande) + (state.satellite_dispersion * state.gain_satellite) + (state.clonage_humain * state.gain_clonage) + (state.terraformation_virale * state.gain_terraformation) + (state.singularite_biologique * state.gain_singularite);
@@ -205,37 +180,26 @@ function sendFullUpdate(target) {
   target.emit('full_update', { gameState, availableBoosts, prestigeInfo, prestigeUpgrades: PRESTIGE_UPGRADE_DEFINITIONS });
 }
 
-// --- SOCKET IO + ANTI-MULTIBOX (PAR DEVICE) ---
 io.on('connection', (socket) => {
-  // RECUPERATION DEVICE ID
   const deviceId = socket.handshake.auth.token || 'unknown';
-  
-  // COMPTAGE DES ONGLETS
   let deviceCount = 0;
-  for (const [_, s] of io.sockets.sockets) {
-    if (s.handshake.auth.token === deviceId) deviceCount++;
-  }
+  for (const [_, s] of io.sockets.sockets) { if (s.handshake.auth.token === deviceId) deviceCount++; }
+  if (deviceCount > MAX_TABS_PER_DEVICE) { socket.disconnect(true); return; }
 
-  // BLOCAGE SI > MAX
-  if (deviceCount > MAX_TABS_PER_DEVICE) {
-    socket.disconnect(true); // On déconnecte le nouvel onglet
-    return;
-  }
-
-  console.log(`Joueur connecté: ${socket.id} | Device: ${deviceId}`);
-  
+  console.log(`Joueur connecté: ${socket.id}`);
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0 });
-  
   lastClickTime.set(socket.id, 0);
   sendFullUpdate(socket);
 
   socket.on('set_username', (name) => {
+    const stats = playerStats.get(socket.id);
+    if (!stats || stats.clicks < 10) return; // 10 clics pour changer de pseudo
     if(typeof name === 'string' && name.trim().length > 0) { 
         const clean = xss(name.trim().substring(0, 15));
         socket.username = clean;
-        if(playerStats.has(socket.id)) playerStats.get(socket.id).name = clean;
+        stats.name = clean;
     }
   });
 
@@ -253,7 +217,6 @@ io.on('connection', (socket) => {
     gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
   });
 
-  // ACHATS
   socket.on('buy_upgrade', (name) => {
     let bought = false;
     const checkAndBuy = (key, costKey) => {
@@ -264,6 +227,7 @@ io.on('connection', (socket) => {
         return true;
       } return false;
     };
+    // Mapping manuel pour éviter les injections
     if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
     else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
     else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
@@ -313,39 +277,35 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- LOGIQUE SÉCURISÉE POUR LE CHAT ---
+  // --- SÉCURITÉ CHAT : GAMEPLAY GATEKEEPER ---
   let lastChatTime = 0;
   let lastMessageHash = "";
 
   socket.on('chat_message', (msg) => {
-    // 1. Validation basique
     if(typeof msg !== 'string') return;
     
-    // 2. Troncature stricte (max 100 chars)
+    // 1. VERIFICATION DES CLICS (Anti-Bot Ultime)
+    const stats = playerStats.get(socket.id);
+    if (!stats || stats.clicks < CHAT_UNLOCK_CLICKS) {
+        // On renvoie une erreur spécifique au client pour lui expliquer pourquoi
+        socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
+        return;
+    }
+
+    // 2. Cooldown classique
+    const now = Date.now();
+    if (now - lastChatTime < CHAT_COOLDOWN_MS) return;
+
     const trimmedMsg = msg.trim().substring(0, 100);
     if(trimmedMsg.length === 0) return;
+    if (trimmedMsg === lastMessageHash) return;
 
-    const now = Date.now();
-
-    // 3. ANTI-SPAM : Vérification du Cooldown
-    if (now - lastChatTime < CHAT_COOLDOWN_MS) {
-      return; // Ignore le message si envoyé trop vite
-    }
-
-    // 4. ANTI-RÉPÉTITION : Vérifie si c'est le même message
-    if (trimmedMsg === lastMessageHash) {
-      return; // Ignore les messages identiques consécutifs
-    }
-
-    // Mise à jour des états de sécurité
     lastChatTime = now;
     lastMessageHash = trimmedMsg;
 
-    // 5. Nettoyage et Envoi
     const cleanMsg = xss(trimmedMsg);
     io.emit('chat_message', { user: socket.username, text: cleanMsg });
   });
-  // --------------------------------------
 
   socket.on('disconnect', () => { lastClickTime.delete(socket.id); playerStats.delete(socket.id); });
 });
