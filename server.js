@@ -22,6 +22,7 @@ const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 const CLICK_COOLDOWN_MS = 40; // Anti-autoclicker (~25 clics/s max)
 const MAX_TABS_PER_DEVICE = 3; // Max 3 onglets par navigateur
+const CHAT_COOLDOWN_MS = 2000; // SÉCURITÉ : 2 secondes entre chaque message
 
 // Variables volatiles
 let currentTickClicks = 0;
@@ -312,11 +313,39 @@ io.on('connection', (socket) => {
     }
   });
 
+  // --- LOGIQUE SÉCURISÉE POUR LE CHAT ---
+  let lastChatTime = 0;
+  let lastMessageHash = "";
+
   socket.on('chat_message', (msg) => {
-    if(typeof msg !== 'string' || msg.trim().length === 0) return;
-    const cleanMsg = xss(msg.substring(0, 100));
+    // 1. Validation basique
+    if(typeof msg !== 'string') return;
+    
+    // 2. Troncature stricte (max 100 chars)
+    const trimmedMsg = msg.trim().substring(0, 100);
+    if(trimmedMsg.length === 0) return;
+
+    const now = Date.now();
+
+    // 3. ANTI-SPAM : Vérification du Cooldown
+    if (now - lastChatTime < CHAT_COOLDOWN_MS) {
+      return; // Ignore le message si envoyé trop vite
+    }
+
+    // 4. ANTI-RÉPÉTITION : Vérifie si c'est le même message
+    if (trimmedMsg === lastMessageHash) {
+      return; // Ignore les messages identiques consécutifs
+    }
+
+    // Mise à jour des états de sécurité
+    lastChatTime = now;
+    lastMessageHash = trimmedMsg;
+
+    // 5. Nettoyage et Envoi
+    const cleanMsg = xss(trimmedMsg);
     io.emit('chat_message', { user: socket.username, text: cleanMsg });
   });
+  // --------------------------------------
 
   socket.on('disconnect', () => { lastClickTime.delete(socket.id); playerStats.delete(socket.id); });
 });
