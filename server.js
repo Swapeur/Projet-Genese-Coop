@@ -19,17 +19,18 @@ const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
-const CLICK_COOLDOWN_MS = 40;
-const MAX_TABS_PER_DEVICE = 3; // On garde la limite par navigateur
-const CHAT_COOLDOWN_MS = 2000; // 2 sec entre messages
-const CHAT_UNLOCK_CLICKS = 50; // IL FAUT 50 CLICS POUR PARLER
+
+const CLICK_COOLDOWN_MS = 60; // Vitesse humaine max (~16 clics/s)
+const MAX_TABS_PER_DEVICE = 3; 
+const CHAT_COOLDOWN_MS = 2000; 
+const CHAT_UNLOCK_CLICKS = 50; 
 
 // Variables volatiles
 let currentTickClicks = 0;
 let lastClickTime = new Map();
 let playerStats = new Map();
 
-// --- DÉFINITIONS (Je remets tes boosts tels quels) ---
+// --- DÉFINITIONS BOOSTS ---
 const BOOST_DEFINITIONS = {
   'seringue_precision': { id: 'seringue_precision', name: 'Seringue de Précision', description: 'Double la puissance de tous les clics.', cost: 2000, conditionType: 'totalClicks', conditionValue: 500 },
   'doigts_bioniques': { id: 'doigts_bioniques', name: 'Doigts Bioniques', description: 'Multiplie la puissance des clics par 3.', cost: 500000, conditionType: 'totalClicks', conditionValue: 2500 },
@@ -73,7 +74,6 @@ const PRESTIGE_UPGRADE_DEFINITIONS = {
 const defaultGameState = {
   totalInfectedCells: 0, totalCellsEver: 0, totalClicks: 0, clickPower: 1, clickPowerBonusFromCPS: 0, 
   cellsPerSecond: 0, clicksPerSecond: 0, prestigePoints: 0, purchasedBoosts: [], purchasedPrestigeUpgrades: [],
-  
   mutations_mineures: 0, cost_mutation: 15, gain_mutation: 0.1,
   vecteurs_oiseaux: 0,   cost_oiseau: 100,  gain_oiseau: 1,
   contamination_eau: 0,  cost_eau: 1100,    gain_eau: 8,
@@ -89,7 +89,15 @@ const defaultGameState = {
 };
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
-function getPlayerScalingFactor() { const playerCount = io.sockets.sockets.size; if (playerCount <= 4) return 1; return Math.sqrt(playerCount); }
+
+function getPlayerScalingFactor() { 
+  let activeLegitPlayers = 0;
+  for (const [_, stats] of playerStats) {
+    if (!stats.isFlaggedBot) activeLegitPlayers++;
+  }
+  if (activeLegitPlayers <= 4) return 1; 
+  return Math.sqrt(activeLegitPlayers); 
+}
 
 function applyAllPurchasedBoosts(state) {
   let prestigeProdBonus = 1; let prestigeClickBonus = 1;
@@ -189,33 +197,70 @@ io.on('connection', (socket) => {
   console.log(`Joueur connecté: ${socket.id}`);
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
-  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0 });
+  
+  // SÉCURITÉ: Initialise 'hasCustomName' à false pour bloquer les clics
+  playerStats.set(socket.id, { 
+    name: defaultName, 
+    clicks: 0, 
+    contribution: 0, 
+    badClicks: 0, 
+    isFlaggedBot: false,
+    hasCustomName: false // NOUVEAU: Verrouillage par défaut
+  });
+  
   lastClickTime.set(socket.id, 0);
   sendFullUpdate(socket);
 
   socket.on('set_username', (name) => {
-    const stats = playerStats.get(socket.id);
-    if (!stats || stats.clicks < 10) return; // 10 clics pour changer de pseudo
     if(typeof name === 'string' && name.trim().length > 0) { 
         const clean = xss(name.trim().substring(0, 15));
         socket.username = clean;
-        stats.name = clean;
+        const stats = playerStats.get(socket.id);
+        if(stats) {
+            stats.name = clean;
+            stats.hasCustomName = true; // NOUVEAU: Déverrouillage du clic
+        }
     }
   });
 
+  // --- ANTI-AUTOCLICKER + VERROUILLAGE PSEUDO ---
   socket.on('click_cell', () => {
+    if(!playerStats.has(socket.id)) return;
+    const stats = playerStats.get(socket.id);
+
+    // 1. Bloquer si pas de pseudo (Anti-Bot de base)
+    if (!stats.hasCustomName) return;
+
+    // 2. Bloquer si Shadowban (Anti-Bot avancé)
+    if (stats.isFlaggedBot) return;
+
     const now = Date.now();
-    if (now - (lastClickTime.get(socket.id) || 0) < CLICK_COOLDOWN_MS) return;
-    lastClickTime.set(socket.id, now);
-    gameState.totalClicks++; currentTickClicks++;
+    const last = lastClickTime.get(socket.id) || 0;
+    const diff = now - last;
+
+    // 3. Détection Spam (Vitesse)
+    if (diff < CLICK_COOLDOWN_MS) {
+        stats.badClicks++;
+        if (stats.badClicks > 20) {
+            stats.isFlaggedBot = true;
+            console.log(`BOT DÉTECTÉ et Shadowbanned: ${socket.id} (${socket.username})`);
+        }
+        return; 
+    }
     
+    if (stats.badClicks > 0) stats.badClicks--;
+
+    lastClickTime.set(socket.id, now);
+    
+    gameState.totalClicks++; currentTickClicks++;
     const base = gameState.clickPower;
     const bonus = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
     const total = (base + bonus) / getPlayerScalingFactor();
     
-    if(playerStats.has(socket.id)) { const p = playerStats.get(socket.id); p.clicks++; p.contribution += total; }
+    stats.clicks++; stats.contribution += total;
     gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
   });
+  // ----------------------------------------------
 
   socket.on('buy_upgrade', (name) => {
     let bought = false;
@@ -227,7 +272,6 @@ io.on('connection', (socket) => {
         return true;
       } return false;
     };
-    // Mapping manuel pour éviter les injections
     if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
     else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
     else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
@@ -277,22 +321,19 @@ io.on('connection', (socket) => {
     }
   });
 
-  // --- SÉCURITÉ CHAT : GAMEPLAY GATEKEEPER ---
   let lastChatTime = 0;
   let lastMessageHash = "";
 
   socket.on('chat_message', (msg) => {
     if(typeof msg !== 'string') return;
     
-    // 1. VERIFICATION DES CLICS (Anti-Bot Ultime)
     const stats = playerStats.get(socket.id);
-    if (!stats || stats.clicks < CHAT_UNLOCK_CLICKS) {
-        // On renvoie une erreur spécifique au client pour lui expliquer pourquoi
-        socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
+    // Gatekeeper : Pas de chat si pas de pseudo, ou bot, ou pas assez joué
+    if (!stats || !stats.hasCustomName || stats.isFlaggedBot || stats.clicks < CHAT_UNLOCK_CLICKS) {
+        if(!stats.isFlaggedBot) socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
         return;
     }
 
-    // 2. Cooldown classique
     const now = Date.now();
     if (now - lastChatTime < CHAT_COOLDOWN_MS) return;
 
@@ -322,7 +363,11 @@ function gameLoop() {
   const clickHeat = currentTickClicks / (TICK_RATE_MS / 1000);
   currentTickClicks = 0;
 
-  const leaderboard = Array.from(playerStats.values()).sort((a, b) => b.contribution - a.contribution).slice(0, 10);
+  const leaderboard = Array.from(playerStats.values())
+      .filter(p => !p.isFlaggedBot && p.hasCustomName) // On ne montre que les vrais joueurs nommés
+      .sort((a, b) => b.contribution - a.contribution)
+      .slice(0, 10);
+      
   io.emit('tick_update', { score: gameState.totalInfectedCells, cps: gameState.cellsPerSecond, clickValue: currentClickValue, clickHeat: clickHeat, players: io.sockets.sockets.size, leaderboard: leaderboard });
 }
 

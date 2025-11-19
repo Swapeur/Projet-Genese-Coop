@@ -80,7 +80,7 @@
     #chat-container { position: absolute; bottom: 10px; left: 10px; width: 320px; height: 230px; background: rgba(13, 17, 23, 0.95); border: 1px solid var(--border-color); border-radius: 5px; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; }
     #chat-header { padding: 5px; border-bottom: 1px solid var(--border-color); background: rgba(0,0,0,0.3); color: var(--viral-green); font-size: 0.9em; font-weight: bold; }
     #chat-messages { flex-grow: 1; overflow-y: auto; padding: 8px; font-size: 0.85em; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: var(--border-color) var(--bg-color); }
-    .msg { word-wrap: break-word; } .msg-user { color: var(--title-color); font-weight: bold; } .msg-text { color: var(--text-color); }
+    .msg { word-wrap: break-word; } .msg-user { color: var(--title-color); font-weight: bold; } .msg-text { color: var(--text-color); } .msg-system { color: var(--error-color); font-style: italic; }
     #chat-form { display: flex; border-top: 1px solid var(--border-color); }
     #chat-input { flex-grow: 1; background: transparent; border: none; padding: 8px; color: #fff; font-family: inherit; outline: none; }
     #chat-btn { background: var(--panel-bg); border: none; border-left: 1px solid var(--border-color); color: var(--title-color); padding: 0 10px; cursor: pointer; font-family: inherit; transition: opacity 0.2s; }
@@ -106,7 +106,7 @@
       <div id="leaderboard-panel"><h3>Top Contributeurs</h3><ul id="leaderboard-list"></ul></div>
       <div id="cell-button"></div><div id="click-info">Puissance Clic: +1</div> 
       <div id="particle-container"></div>
-      <div id="chat-container"><div id="chat-header">Badge: <span id="current-username-display">Anonyme</span></div><div id="chat-messages"><div class="msg"><span class="msg-user">Système:</span> <span class="msg-text">Connexion établie.</span></div></div><form id="chat-form"><input type="text" id="chat-input" placeholder="Message..." autocomplete="off"><button type="submit" id="chat-btn">></button></form></div>
+      <div id="chat-container"><div id="chat-header">Badge: <span id="current-username-display">Anonyme</span></div><div id="chat-messages"><div class="msg"><span class="msg-user">Système:</span> <span class="msg-text">Connexion établie.</span></div></div><form id="chat-form"><input type="text" id="chat-input" placeholder="Débloquez le chat (50 clics)..." autocomplete="off"><button type="submit" id="chat-btn">></button></form></div>
     </div>
     <div id="store-area">
       <div id="prestige-area"><h3>Recherche Avancée</h3><p>+<span id="p-gain">0</span> PR au reset</p><p>Total: <span id="p-total">0</span> PR</p><button class="prestige-btn secondary" id="btn-meta">Méta-Recherche (🧠)</button><button class="prestige-btn" id="btn-reset">Lancer la Mutation Globale</button></div>
@@ -148,21 +148,18 @@
     let lastState = null; let lastUpdate = Date.now(); let currentScore = 0; let currentClickValue = 1;
     const scoreEl = document.getElementById('scoreDisplay'); const cellBtn = document.getElementById('cell-button'); const tooltip = document.getElementById('tooltip'); const partCont = document.getElementById('particle-container'); const passPartCont = document.getElementById('passive-particle-container'); const storeEl = document.getElementById('store-area'); const leaderboardList = document.getElementById('leaderboard-list');
     
-    // --- MODIFIÉ : FORMATAGE DÉCIMAL POUR PETITS NOMBRES ---
     function formatNumber(num) { 
-      if (num < 1000) return parseFloat(num.toFixed(1)); // Affiche 1 décimale si < 1000
+      if (num < 1000) return parseFloat(num.toFixed(1));
       if (num < 1000000) return parseFloat((num / 1000).toFixed(2)) + 'k'; 
       if (num < 1000000000) return parseFloat((num / 1000000).toFixed(2)) + 'M'; 
       if (num < 1000000000000) return parseFloat((num / 1000000000).toFixed(2)) + 'Md'; 
       if (num < 1000000000000000) return parseFloat((num / 1000000000000).toFixed(2)) + 'T'; 
       return parseFloat((num / 1000000000000000).toFixed(2)) + 'Qa'; 
     }
-    // -------------------------------------------------------
 
     const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
     loginForm.onsubmit = (e) => { e.preventDefault(); const name = loginInput.value.trim(); if(name.length > 0) { if(audioCtx.state === 'suspended') audioCtx.resume(); socket.emit('set_username', name); currentUsernameDisplay.innerText = name; loginOverlay.style.display = 'none'; } else { loginInput.style.borderColor = "var(--error-color)"; setTimeout(() => loginInput.style.borderColor = "var(--border-color)", 300); } };
     
-    // --- MODIFIÉ : GESTION DU CHAT AVEC DÉLAI VISUEL ---
     const chatForm = document.getElementById('chat-form'); 
     const chatInput = document.getElementById('chat-input'); 
     const chatMsg = document.getElementById('chat-messages');
@@ -171,17 +168,12 @@
     chatForm.onsubmit = (e) => { 
       e.preventDefault(); 
       const txt = chatInput.value; 
-      
-      // On vérifie qu'il y a du texte ET que le bouton n'est pas désactivé
       if(txt.trim() && !chatBtn.disabled) { 
         socket.emit('chat_message', txt); 
         chatInput.value = ''; 
-
-        // UX : On désactive le bouton visuellement pendant 2 secondes
         chatBtn.disabled = true;
         chatBtn.style.opacity = '0.5';
         chatBtn.style.cursor = 'not-allowed';
-
         setTimeout(() => {
           chatBtn.disabled = false;
           chatBtn.style.opacity = '1';
@@ -200,7 +192,14 @@
       chatMsg.scrollTop = chatMsg.scrollHeight; 
       Sound.chat(); 
     });
-    // ---------------------------------------------------
+
+    socket.on('chat_error', (msg) => {
+      const div = document.createElement('div'); 
+      div.className = 'msg'; 
+      div.innerHTML = `<span class="msg-system">⛔ Système: ${msg}</span>`; 
+      chatMsg.appendChild(div); 
+      chatMsg.scrollTop = chatMsg.scrollHeight; 
+    });
 
     const builds = { 'mutation_mineure': 'b-mutation', 'vecteur_oiseau': 'b-oiseau', 'contamination_eau': 'b-eau', 'transmission_aerosol': 'b-aerosol', 'aeroport_international': 'b-aeroport', 'fermes_virales': 'b-ferme', 'centres_contagion': 'b-centre', 'propagande_virale': 'b-propagande', 'satellite_dispersion': 'b-satellite', 'clonage_humain': 'b-clonage', 'terraformation_virale': 'b-terraformation', 'singularite_biologique': 'b-singularite' };
     function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost" style="color:var(--viral-green)">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
@@ -211,7 +210,6 @@
     function spawnFloatingText(e, amount) { const el = document.createElement('div'); el.className = 'float-text'; el.innerText = '+' + formatNumber(amount); let x = e.clientX; let y = e.clientY; if(!x && !y) { const rect = cellBtn.getBoundingClientRect(); x = rect.left + rect.width/2; y = rect.top + rect.height/2; } x += (Math.random() - 0.5) * 30; el.style.left = x + 'px'; el.style.top = y + 'px'; document.body.appendChild(el); setTimeout(() => el.remove(), 800); }
     document.getElementById('btn-reset').onclick = () => { if(confirm('Prestige ? Reset complet vs PR.')) socket.emit('do_prestige'); }; document.getElementById('btn-meta').onclick = () => { document.getElementById('modal-backdrop').style.display = 'flex'; renderPrestigeShop(); }; document.getElementById('modal-backdrop').onclick = (e) => { if(e.target.id === 'modal-backdrop') e.target.style.display = 'none'; };
 
-    // --- MODIFIÉ : LEADERBOARD AVEC COMPTEUR DE CLICS ---
     socket.on('tick_update', (d) => { 
       if(!lastState) return; 
       lastState.totalInfectedCells = d.score; 
@@ -235,7 +233,6 @@
       const hue = Math.min(d.clickHeat*0.8, 120); 
       cellBtn.style.filter = `hue-rotate(${hue}deg)`; 
     });
-    // ----------------------------------------------------
 
     socket.on('full_update', (d) => { lastState = d.gameState; lastUpdate = Date.now(); prestigeUpgradesList = d.prestigeUpgrades; const s = lastState; const update = (key, cKey, gKey, cntKey) => { const el = document.getElementById(builds[key]); if(el) { const cost = s[cKey]; const gain = s[gKey]; const count = s[cntKey]; el.querySelector('.item-cost').innerText = formatNumber(cost); el.querySelector('.item-cost').dataset.raw = cost; el.querySelector('.item-count').innerText = count; el.querySelector('.item-gain').innerText = `+${formatNumber(gain)} CI/s`; el.querySelector('.item-gain').dataset.raw = gain; } }; update('mutation_mineure', 'cost_mutation', 'gain_mutation', 'mutations_mineures'); update('vecteur_oiseau', 'cost_oiseau', 'gain_oiseau', 'vecteurs_oiseaux'); update('contamination_eau', 'cost_eau', 'gain_eau', 'contamination_eau'); update('transmission_aerosol', 'cost_aerosol', 'gain_aerosol', 'transmission_aerosol'); update('aeroport_international', 'cost_aeroport', 'gain_aeroport', 'aeroport_international'); update('fermes_virales', 'cost_ferme', 'gain_ferme', 'fermes_virales'); update('centres_contagion', 'cost_centre', 'gain_centre', 'centres_contagion'); update('propagande_virale', 'cost_propagande', 'gain_propagande', 'propagande_virale'); update('satellite_dispersion', 'cost_satellite', 'gain_satellite', 'satellite_dispersion'); update('clonage_humain', 'cost_clonage', 'gain_clonage', 'clonage_humain'); update('terraformation_virale', 'cost_terraformation', 'gain_terraformation', 'terraformation_virale'); update('singularite_biologique', 'cost_singularite', 'gain_singularite', 'singularite_biologique'); const boostCont = document.getElementById('boost-container'); boostCont.innerHTML = ''; for(const b of d.availableBoosts) { const el = document.createElement('div'); el.className = 'boost-item'; let ico = '❓'; if(b.id.includes('seringue') || b.id.includes('gants')) ico='🧤'; else if(b.id.includes('doigts')) ico='🦾'; else if(b.id.includes('rage')) ico='🩸'; else if(b.id.includes('osmose')) ico='⚡'; else if(b.id.includes('neurones')) ico='🧠'; else if(b.id.includes('clics')) ico='🖱️'; else if(b.id.includes('mutation')) ico='🧬'; else if(b.id.includes('plumes')||b.id.includes('oiseau')) ico='🪶'; else if(b.id.includes('filtres')||b.id.includes('eau')) ico='💧'; else if(b.id.includes('spores')||b.id.includes('aerosol')) ico='💨'; else if(b.id.includes('partenariats')||b.id.includes('aeroport')) ico='✈️'; else if(b.id.includes('nutriments')||b.id.includes('ferme')) ico='🌿'; else if(b.id.includes('gentrification')||b.id.includes('centre')) ico='🏙️'; else if(b.id.includes('fake')||b.id.includes('propagande')) ico='📰'; else if(b.id.includes('sat')) ico='📡'; else if(b.id.includes('clone')) ico='👯'; else if(b.id.includes('terra')) ico='🌍'; else if(b.id.includes('singu')) ico='🌌'; else if(b.id.includes('matrice')) ico='💠'; else if(b.id.includes('synergie')) ico='🔗'; else if(b.id.includes('contamination')) ico='☣️'; el.innerText = ico; el.onclick = () => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; if(currentScore >= cost) { socket.emit('buy_boost', b.id); el.remove(); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; showTip(e, b.name, cost, b.description); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; el.dataset.cost = cost; boostCont.appendChild(el); } const pInfo = d.prestigeInfo; const pArea = document.getElementById('prestige-area'); if(pInfo.canPrestige || s.prestigePoints > 0) { pArea.style.display = 'block'; document.getElementById('prestige-points-gain').innerText = formatNumber(pInfo.pointsOnReset); document.getElementById('prestige-points-total').innerText = formatNumber(s.prestigePoints); } else { pArea.style.display = 'none'; } renderPrestigeShop(); });
     function renderPrestigeShop() { if(!lastState) return; const body = document.getElementById('modal-body'); body.innerHTML = ''; for(const id in prestigeUpgradesList) { const u = prestigeUpgradesList[id]; const row = document.createElement('div'); row.className = 'p-upgrade'; row.innerHTML = `<div><h4>${u.name}</h4><div class="description">${u.description}</div></div><div class="cost">${u.cost} PR</div>`; const isBought = lastState.purchasedPrestigeUpgrades.includes(id); const canBuy = lastState.prestigePoints >= u.cost; if(isBought) row.classList.add('purchased'); else if(!canBuy) row.classList.add('disabled'); row.onclick = () => { if(!isBought && canBuy) { socket.emit('buy_prestige_upgrade', id); row.classList.add('purchased'); Sound.buy(); } else if (!isBought) { row.classList.add('error-anim'); setTimeout(()=>row.classList.remove('error-anim'),300); } }; body.appendChild(row); } }
