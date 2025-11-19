@@ -34,7 +34,6 @@
     /* ------------------------ */
     
     .container { display: flex; height: 100vh; width: 100vw; position: relative; z-index: 10; }
-    /* --- #game-area MODIFIÉ pour centrer le contenu sous le titre --- */
     #game-area { 
       flex-grow: 1; 
       display: flex; 
@@ -48,7 +47,6 @@
       padding-top: 10px; 
       padding-bottom: 10px;
     }
-    /* -------------------------------------------------------------- */
     #store-area { width: 350px; min-width: 350px; background-color: var(--panel-bg); height: 100%; overflow-y: auto; padding: 10px; z-index: 20; display: flex; flex-direction: column; gap: 10px; }
 
     #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--bg-color); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
@@ -70,7 +68,6 @@
       border-radius: 8px; 
       /* MODIFIE: Ombre plus profonde */
       box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 8px rgba(255, 255, 255, 0.05); 
-      /* MARGINS MIS À JOUR */
       margin-top: 0; 
       margin-bottom: 0; 
       text-align: center; 
@@ -87,7 +84,18 @@
     #scoreDisplay.pop { transform: scale(1.1); color: #fff; }
     .score-label { font-size: 1.2em; margin-top: 5px; color: #8b949e; }
     #cps-display { color: var(--viral-green); font-size: 1.5em; margin-top: 10px; font-weight: bold; font-variant-numeric: tabular-nums; }
-    #player-count { position: absolute; top: 10px; right: 10px; font-size: 1em; color: #8b949e; }
+    
+    /* --- MODIFICATION de #player-count --- */
+    #player-count { 
+      position: absolute; 
+      top: 15px; 
+      right: 20px; 
+      font-size: 1.2em; 
+      color: var(--viral-green); 
+      font-weight: bold; 
+      text-shadow: 0 0 8px var(--viral-glow);
+    }
+    /* -------------------------------------- */
 
     #cell-button { 
       width: 220px; 
