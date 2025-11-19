@@ -5,7 +5,7 @@ const { Server } = require("socket.io");
 const io = new Server(http);
 const fs = require('fs');
 
-// --- MODULES DE SÉCURITÉ ---
+// --- SÉCURITÉ HTTP ---
 const xss = require('xss');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -20,13 +20,10 @@ const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 
-// REGLAGES ANTI-CHEAT (ASSOUPLIS)
-const CLICK_COOLDOWN_MS = 33; // ~30 clics/s (Humainement atteignable en burst)
-const BAD_CLICK_TOLERANCE = 50; // Nombre d'erreurs autorisées avant ban (Lag tolerance)
-const MIN_VARIANCE_THRESHOLD = 2; // Si la régularité est < 2ms, c'est un robot
-const CLICK_HISTORY_SIZE = 10; // Analyse des 10 derniers clics
-
+// LIMITES PHYSIQUES (Pas de ban, juste un plafond)
+const CLICK_COOLDOWN_MS = 40; // Max 25 clics/seconde acceptés par le serveur
 const MAX_TABS_PER_DEVICE = 3; 
+
 const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
 
@@ -95,23 +92,14 @@ const defaultGameState = {
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
 
-// Fonction Mathématique pour l'écart-type (Détection Bot)
-function calculateStandardDeviation(array) {
-  const n = array.length;
-  if(n <= 1) return 0;
-  const mean = array.reduce((a, b) => a + b) / n;
-  const variance = array.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
-  return Math.sqrt(variance);
-}
-
-// ÉQUILIBRAGE : On ne compte que les joueurs légitimes
+// ÉQUILIBRAGE : Compte les joueurs actifs nommés
 function getPlayerScalingFactor() { 
-  let activeLegitPlayers = 0;
+  let activePlayers = 0;
   for (const [_, stats] of playerStats) {
-    if (!stats.isFlaggedBot) activeLegitPlayers++;
+    if (stats.hasCustomName) activePlayers++;
   }
-  if (activeLegitPlayers <= 4) return 1; 
-  return Math.sqrt(activeLegitPlayers); 
+  if (activePlayers <= 4) return 1; 
+  return Math.sqrt(activePlayers); 
 }
 
 function applyAllPurchasedBoosts(state) {
@@ -120,7 +108,6 @@ function applyAllPurchasedBoosts(state) {
   if (state.purchasedPrestigeUpgrades.includes('p_clics_experts')) prestigeClickBonus = 2;
 
   state.clickPower = 1 * prestigeClickBonus; state.clickPowerBonusFromCPS = 0;
-  
   state.gain_mutation = defaultGameState.gain_mutation * prestigeProdBonus;
   state.gain_oiseau = defaultGameState.gain_oiseau * prestigeProdBonus;
   state.gain_eau = defaultGameState.gain_eau * prestigeProdBonus;
@@ -213,15 +200,7 @@ io.on('connection', (socket) => {
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   
-  playerStats.set(socket.id, { 
-    name: defaultName, 
-    clicks: 0, 
-    contribution: 0, 
-    badClicks: 0, 
-    isFlaggedBot: false,
-    hasCustomName: false,
-    clickHistory: [] 
-  });
+  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0, hasCustomName: false });
   
   lastClickTime.set(socket.id, 0);
   sendFullUpdate(socket);
@@ -233,7 +212,7 @@ io.on('connection', (socket) => {
         const stats = playerStats.get(socket.id);
         if(stats) {
             stats.name = clean;
-            stats.hasCustomName = true;
+            stats.hasCustomName = true; // Déverrouillage
         }
     }
   });
@@ -242,45 +221,19 @@ io.on('connection', (socket) => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
 
-    if (!stats.hasCustomName) return; // Pseudo requis
-    if (stats.isFlaggedBot) return;   // Shadowban
+    // SÉCURITÉ 1 : Pas de pseudo = Pas de clic
+    if (!stats.hasCustomName) return;
 
+    // SÉCURITÉ 2 : Speed Limit (40ms) - Juste un plafond, PAS DE BAN
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
-    const diff = now - last;
-
-    // 1. DÉTECTION VITESSE (Tolérance 50 fautes)
-    if (diff < CLICK_COOLDOWN_MS) {
-        stats.badClicks++;
-        if (stats.badClicks > BAD_CLICK_TOLERANCE) {
-            stats.isFlaggedBot = true;
-            console.log(`BOT (Vitesse) : ${socket.id}`);
-        }
-        return; 
-    }
-    if (stats.badClicks > 0) stats.badClicks--;
-
-    // 2. DÉTECTION RÉGULARITÉ (Tolérance 2ms)
-    stats.clickHistory.push(now);
-    if (stats.clickHistory.length > CLICK_HISTORY_SIZE) stats.clickHistory.shift(); 
-
-    if (stats.clickHistory.length === CLICK_HISTORY_SIZE) {
-        let deltas = [];
-        for(let i = 0; i < CLICK_HISTORY_SIZE - 1; i++) {
-            deltas.push(stats.clickHistory[i+1] - stats.clickHistory[i]);
-        }
-        const stdDev = calculateStandardDeviation(deltas);
-        const avgSpeed = deltas.reduce((a,b)=>a+b) / deltas.length;
-
-        if (avgSpeed < 300 && stdDev < MIN_VARIANCE_THRESHOLD) {
-            stats.isFlaggedBot = true;
-            console.log(`BOT (Régularité: σ=${stdDev.toFixed(2)}ms) : ${socket.id}`);
-            return;
-        }
+    if (now - last < CLICK_COOLDOWN_MS) {
+        return; // On ignore ce clic, mais on ne punit pas
     }
 
     lastClickTime.set(socket.id, now);
     
+    // Gains
     gameState.totalClicks++; currentTickClicks++;
     const base = gameState.clickPower;
     const bonus = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
@@ -356,8 +309,9 @@ io.on('connection', (socket) => {
     if(typeof msg !== 'string') return;
     
     const stats = playerStats.get(socket.id);
-    if (!stats || !stats.hasCustomName || stats.isFlaggedBot || stats.clicks < CHAT_UNLOCK_CLICKS) {
-        if(!stats.isFlaggedBot) socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
+    // SÉCURITÉ CHAT : Pseudo + 50 clics minimum
+    if (!stats || !stats.hasCustomName || stats.clicks < CHAT_UNLOCK_CLICKS) {
+        socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
         return;
     }
 
@@ -391,7 +345,7 @@ function gameLoop() {
   currentTickClicks = 0;
 
   const leaderboard = Array.from(playerStats.values())
-      .filter(p => !p.isFlaggedBot && p.hasCustomName)
+      .filter(p => p.hasCustomName) // Seulement les joueurs avec pseudo
       .sort((a, b) => b.contribution - a.contribution)
       .slice(0, 10);
       
