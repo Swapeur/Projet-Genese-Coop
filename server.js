@@ -199,7 +199,9 @@ io.on('connection', (socket) => {
   if (deviceCount > MAX_TABS_PER_DEVICE) { socket.disconnect(true); return; }
 
   console.log(`Joueur connecté: ${socket.id}`);
-  const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
+  
+  // MODIFIÉ: Nom par défaut pour l'authentification Google
+  const defaultName = 'Agent Anonyme ' + socket.id.substring(0, 4); 
   socket.username = defaultName;
   
   // Initialisation sans ban
@@ -209,7 +211,8 @@ io.on('connection', (socket) => {
   sendFullUpdate(socket);
 
   socket.on('set_username', (name) => {
-    if(typeof name === 'string' && name.trim().length > 0) { 
+    // MODIFIÉ: Valide que le nom est non-vide et qu'il n'est pas le nom par défaut anonyme.
+    if(typeof name === 'string' && name.trim().length > 0 && name.trim() !== defaultName) { 
         const clean = xss(name.trim().substring(0, 15));
         socket.username = clean;
         const stats = playerStats.get(socket.id);
@@ -217,6 +220,9 @@ io.on('connection', (socket) => {
             stats.name = clean;
             stats.hasCustomName = true;
         }
+    } else {
+        // En cas d'échec de l'authentification/du nom, déconnexion forcée
+        // socket.disconnect(true);
     }
   });
 
@@ -224,7 +230,7 @@ io.on('connection', (socket) => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
 
-    if (!stats.hasCustomName) return; // Pseudo requis
+    if (!stats.hasCustomName) return; // Pseudo requis (doit passer par set_username après Google)
 
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
