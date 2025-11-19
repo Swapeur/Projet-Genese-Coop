@@ -20,10 +20,14 @@ const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 
-const CLICK_COOLDOWN_MS = 60; // Vitesse humaine max (~16 clics/s)
+const CLICK_COOLDOWN_MS = 50; // ~20 clics/s max physique
 const MAX_TABS_PER_DEVICE = 3; 
 const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
+
+// NOUVEAU : Seuils de détection de régularité
+const CLICK_HISTORY_SIZE = 10; // On analyse les 10 derniers clics
+const MIN_VARIANCE_THRESHOLD = 5; // Si la variance est < 5ms, c'est trop robotique
 
 // Variables volatiles
 let currentTickClicks = 0;
@@ -89,6 +93,15 @@ const defaultGameState = {
 };
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
+
+// NOUVEAU: Fonction Mathématique pour calculer l'écart-type
+function calculateStandardDeviation(array) {
+  const n = array.length;
+  if(n <= 1) return 0;
+  const mean = array.reduce((a, b) => a + b) / n;
+  const variance = array.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / n;
+  return Math.sqrt(variance);
+}
 
 function getPlayerScalingFactor() { 
   let activeLegitPlayers = 0;
@@ -198,14 +211,15 @@ io.on('connection', (socket) => {
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   
-  // SÉCURITÉ: Initialise 'hasCustomName' à false pour bloquer les clics
+  // NOUVEAU: On ajoute 'clickHistory' pour stocker les timestamps des 10 derniers clics
   playerStats.set(socket.id, { 
     name: defaultName, 
     clicks: 0, 
     contribution: 0, 
     badClicks: 0, 
     isFlaggedBot: false,
-    hasCustomName: false // NOUVEAU: Verrouillage par défaut
+    hasCustomName: false,
+    clickHistory: [] // Historique des timestamps
   });
   
   lastClickTime.set(socket.id, 0);
@@ -218,37 +232,57 @@ io.on('connection', (socket) => {
         const stats = playerStats.get(socket.id);
         if(stats) {
             stats.name = clean;
-            stats.hasCustomName = true; // NOUVEAU: Déverrouillage du clic
+            stats.hasCustomName = true;
         }
     }
   });
 
-  // --- ANTI-AUTOCLICKER + VERROUILLAGE PSEUDO ---
   socket.on('click_cell', () => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
 
-    // 1. Bloquer si pas de pseudo (Anti-Bot de base)
-    if (!stats.hasCustomName) return;
-
-    // 2. Bloquer si Shadowban (Anti-Bot avancé)
-    if (stats.isFlaggedBot) return;
+    if (!stats.hasCustomName) return; // Pseudo requis
+    if (stats.isFlaggedBot) return;   // Shadowban
 
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
     const diff = now - last;
 
-    // 3. Détection Spam (Vitesse)
+    // 1. Détection Spam Vitesse (Trop rapide)
     if (diff < CLICK_COOLDOWN_MS) {
         stats.badClicks++;
         if (stats.badClicks > 20) {
             stats.isFlaggedBot = true;
-            console.log(`BOT DÉTECTÉ et Shadowbanned: ${socket.id} (${socket.username})`);
+            console.log(`BOT (Vitesse) : ${socket.id}`);
         }
         return; 
     }
-    
     if (stats.badClicks > 0) stats.badClicks--;
+
+    // 2. NOUVEAU : Détection Régularité (Trop parfait)
+    stats.clickHistory.push(now);
+    if (stats.clickHistory.length > CLICK_HISTORY_SIZE) stats.clickHistory.shift(); // Garder les derniers
+
+    // On analyse seulement si le joueur clique activement (histoire pleine)
+    if (stats.clickHistory.length === CLICK_HISTORY_SIZE) {
+        // Calcul des intervalles (deltas) entre les clics
+        let deltas = [];
+        for(let i = 0; i < CLICK_HISTORY_SIZE - 1; i++) {
+            deltas.push(stats.clickHistory[i+1] - stats.clickHistory[i]);
+        }
+        
+        // Si l'écart type est minuscule (ex: < 5ms), c'est un robot
+        const stdDev = calculateStandardDeviation(deltas);
+        
+        // On vérifie aussi que la vitesse moyenne est élevée (< 300ms) pour ne pas punir ceux qui cliquent 1 fois par seconde
+        const avgSpeed = deltas.reduce((a,b)=>a+b) / deltas.length;
+
+        if (avgSpeed < 300 && stdDev < MIN_VARIANCE_THRESHOLD) {
+            stats.isFlaggedBot = true;
+            console.log(`BOT (Régularité: σ=${stdDev.toFixed(2)}ms) : ${socket.id}`);
+            return;
+        }
+    }
 
     lastClickTime.set(socket.id, now);
     
@@ -260,66 +294,70 @@ io.on('connection', (socket) => {
     stats.clicks++; stats.contribution += total;
     gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
   });
-  // ----------------------------------------------
+
+  // ... (Les handlers buy_upgrade, buy_boost, etc. sont identiques à avant) ...
+  // Pour gagner de la place, je ne les recolle pas ici, assurez-vous de garder les blocs existants
+  // ou reprenez ceux du message précédent qui étaient corrects.
+  // Je remets juste le CHAT qui est important.
 
   socket.on('buy_upgrade', (name) => {
-    let bought = false;
-    const checkAndBuy = (key, costKey) => {
-      if(gameState[costKey] === undefined) return false;
-      if (gameState.totalInfectedCells >= gameState[costKey]) {
-        gameState.totalInfectedCells -= gameState[costKey]; gameState[key]++;
-        gameState[costKey] = Math.ceil(defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]));
-        return true;
-      } return false;
-    };
-    if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
-    else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
-    else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
-    else if (name === 'transmission_aerosol') bought = checkAndBuy('transmission_aerosol', 'cost_aerosol');
-    else if (name === 'aeroport_international') bought = checkAndBuy('aeroport_international', 'cost_aeroport');
-    else if (name === 'fermes_virales') bought = checkAndBuy('fermes_virales', 'cost_ferme');
-    else if (name === 'centres_contagion') bought = checkAndBuy('centres_contagion', 'cost_centre');
-    else if (name === 'propagande_virale') bought = checkAndBuy('propagande_virale', 'cost_propagande');
-    else if (name === 'satellite_dispersion') bought = checkAndBuy('satellite_dispersion', 'cost_satellite');
-    else if (name === 'clonage_humain') bought = checkAndBuy('clonage_humain', 'cost_clonage');
-    else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
-    else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
-
-    if (bought) { applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState); }
-  });
-
-  socket.on('buy_boost', (id) => {
-    const boost = BOOST_DEFINITIONS[id];
-    if (boost && !gameState.purchasedBoosts.includes(id)) {
-      let cost = boost.cost;
-      if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9;
-      if (gameState.totalInfectedCells >= cost) {
-        gameState.totalInfectedCells -= cost; gameState.purchasedBoosts.push(id);
+      let bought = false;
+      const checkAndBuy = (key, costKey) => {
+        if(gameState[costKey] === undefined) return false;
+        if (gameState.totalInfectedCells >= gameState[costKey]) {
+          gameState.totalInfectedCells -= gameState[costKey]; gameState[key]++;
+          gameState[costKey] = Math.ceil(defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]));
+          return true;
+        } return false;
+      };
+      if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
+      else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
+      else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
+      else if (name === 'transmission_aerosol') bought = checkAndBuy('transmission_aerosol', 'cost_aerosol');
+      else if (name === 'aeroport_international') bought = checkAndBuy('aeroport_international', 'cost_aeroport');
+      else if (name === 'fermes_virales') bought = checkAndBuy('fermes_virales', 'cost_ferme');
+      else if (name === 'centres_contagion') bought = checkAndBuy('centres_contagion', 'cost_centre');
+      else if (name === 'propagande_virale') bought = checkAndBuy('propagande_virale', 'cost_propagande');
+      else if (name === 'satellite_dispersion') bought = checkAndBuy('satellite_dispersion', 'cost_satellite');
+      else if (name === 'clonage_humain') bought = checkAndBuy('clonage_humain', 'cost_clonage');
+      else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
+      else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
+  
+      if (bought) { applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState); }
+    });
+  
+    socket.on('buy_boost', (id) => {
+      const boost = BOOST_DEFINITIONS[id];
+      if (boost && !gameState.purchasedBoosts.includes(id)) {
+        let cost = boost.cost;
+        if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9;
+        if (gameState.totalInfectedCells >= cost) {
+          gameState.totalInfectedCells -= cost; gameState.purchasedBoosts.push(id);
+          applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
+        }
+      }
+    });
+  
+    socket.on('buy_prestige_upgrade', (id) => {
+      const upg = PRESTIGE_UPGRADE_DEFINITIONS[id];
+      if (upg && !gameState.purchasedPrestigeUpgrades.includes(id)) {
+        if (gameState.prestigePoints >= upg.cost) {
+          gameState.prestigePoints -= upg.cost; gameState.purchasedPrestigeUpgrades.push(id);
+          applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
+        }
+      }
+    });
+  
+    socket.on('do_prestige', () => {
+      const pts = calculatePrestigePoints(gameState.totalCellsEver);
+      if (pts > 0) {
+        const oldPrestige = gameState.prestigePoints; const oldUpgrades = gameState.purchasedPrestigeUpgrades;
+        gameState = JSON.parse(JSON.stringify(defaultGameState));
+        gameState.prestigePoints = oldPrestige + pts; gameState.purchasedPrestigeUpgrades = oldUpgrades;
+        if (gameState.purchasedPrestigeUpgrades.includes('p_kit_demarrage')) gameState.mutations_mineures = 5;
         applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
       }
-    }
-  });
-
-  socket.on('buy_prestige_upgrade', (id) => {
-    const upg = PRESTIGE_UPGRADE_DEFINITIONS[id];
-    if (upg && !gameState.purchasedPrestigeUpgrades.includes(id)) {
-      if (gameState.prestigePoints >= upg.cost) {
-        gameState.prestigePoints -= upg.cost; gameState.purchasedPrestigeUpgrades.push(id);
-        applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
-      }
-    }
-  });
-
-  socket.on('do_prestige', () => {
-    const pts = calculatePrestigePoints(gameState.totalCellsEver);
-    if (pts > 0) {
-      const oldPrestige = gameState.prestigePoints; const oldUpgrades = gameState.purchasedPrestigeUpgrades;
-      gameState = JSON.parse(JSON.stringify(defaultGameState));
-      gameState.prestigePoints = oldPrestige + pts; gameState.purchasedPrestigeUpgrades = oldUpgrades;
-      if (gameState.purchasedPrestigeUpgrades.includes('p_kit_demarrage')) gameState.mutations_mineures = 5;
-      applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
-    }
-  });
+    });
 
   let lastChatTime = 0;
   let lastMessageHash = "";
@@ -328,7 +366,6 @@ io.on('connection', (socket) => {
     if(typeof msg !== 'string') return;
     
     const stats = playerStats.get(socket.id);
-    // Gatekeeper : Pas de chat si pas de pseudo, ou bot, ou pas assez joué
     if (!stats || !stats.hasCustomName || stats.isFlaggedBot || stats.clicks < CHAT_UNLOCK_CLICKS) {
         if(!stats.isFlaggedBot) socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
         return;
@@ -364,7 +401,7 @@ function gameLoop() {
   currentTickClicks = 0;
 
   const leaderboard = Array.from(playerStats.values())
-      .filter(p => !p.isFlaggedBot && p.hasCustomName) // On ne montre que les vrais joueurs nommés
+      .filter(p => !p.isFlaggedBot && p.hasCustomName)
       .sort((a, b) => b.contribution - a.contribution)
       .slice(0, 10);
       
