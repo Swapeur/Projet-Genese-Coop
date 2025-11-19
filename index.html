@@ -63,7 +63,7 @@
 
     .score-panel { 
       background-color: var(--panel-bg); 
-      border: 1px solid var(--border-color); 
+      border: 1險 solid var(--border-color); 
       padding: 15px 40px; 
       border-radius: 8px; 
       /* MODIFIE: Ombre plus profonde */
@@ -116,7 +116,19 @@
     #cell-button:active { transform: scale(0.95); }
     #cell-button.clicked { animation: cellClickAnim 0.1s; }
     @keyframes cellClickAnim { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
-    #click-info { margin-top: 15px; color: #8b949e; font-size: 1em; text-align: center; font-variant-numeric: tabular-nums; }
+    
+    /* --- MODIFICATION de #click-info --- */
+    #click-info { 
+      margin-top: 15px; 
+      color: var(--viral-green); 
+      font-size: 1.4em; 
+      text-align: center; 
+      font-weight: bold;
+      font-variant-numeric: tabular-nums; 
+      text-shadow: 0 0 8px var(--viral-glow); 
+      flex-shrink: 0;
+    }
+    /* -------------------------------------- */
 
     .float-text { position: absolute; color: #fff; font-weight: bold; font-size: 1.4em; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 5px #000; z-index: 1000; }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.3); } }
