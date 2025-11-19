@@ -20,14 +20,15 @@ const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
 const PRESTIGE_THRESHOLD = 1e15; 
 
-const CLICK_COOLDOWN_MS = 50; // ~20 clics/s max physique
+// REGLAGES ANTI-CHEAT (ASSOUPLIS)
+const CLICK_COOLDOWN_MS = 33; // ~30 clics/s (Humainement atteignable en burst)
+const BAD_CLICK_TOLERANCE = 50; // Nombre d'erreurs autorisées avant ban (Lag tolerance)
+const MIN_VARIANCE_THRESHOLD = 2; // Si la régularité est < 2ms, c'est un robot
+const CLICK_HISTORY_SIZE = 10; // Analyse des 10 derniers clics
+
 const MAX_TABS_PER_DEVICE = 3; 
 const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
-
-// NOUVEAU : Seuils de détection de régularité
-const CLICK_HISTORY_SIZE = 10; // On analyse les 10 derniers clics
-const MIN_VARIANCE_THRESHOLD = 5; // Si la variance est < 5ms, c'est trop robotique
 
 // Variables volatiles
 let currentTickClicks = 0;
@@ -94,7 +95,7 @@ const defaultGameState = {
 
 function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
 
-// NOUVEAU: Fonction Mathématique pour calculer l'écart-type
+// Fonction Mathématique pour l'écart-type (Détection Bot)
 function calculateStandardDeviation(array) {
   const n = array.length;
   if(n <= 1) return 0;
@@ -103,6 +104,7 @@ function calculateStandardDeviation(array) {
   return Math.sqrt(variance);
 }
 
+// ÉQUILIBRAGE : On ne compte que les joueurs légitimes
 function getPlayerScalingFactor() { 
   let activeLegitPlayers = 0;
   for (const [_, stats] of playerStats) {
@@ -211,7 +213,6 @@ io.on('connection', (socket) => {
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   
-  // NOUVEAU: On ajoute 'clickHistory' pour stocker les timestamps des 10 derniers clics
   playerStats.set(socket.id, { 
     name: defaultName, 
     clicks: 0, 
@@ -219,7 +220,7 @@ io.on('connection', (socket) => {
     badClicks: 0, 
     isFlaggedBot: false,
     hasCustomName: false,
-    clickHistory: [] // Historique des timestamps
+    clickHistory: [] 
   });
   
   lastClickTime.set(socket.id, 0);
@@ -248,10 +249,10 @@ io.on('connection', (socket) => {
     const last = lastClickTime.get(socket.id) || 0;
     const diff = now - last;
 
-    // 1. Détection Spam Vitesse (Trop rapide)
+    // 1. DÉTECTION VITESSE (Tolérance 50 fautes)
     if (diff < CLICK_COOLDOWN_MS) {
         stats.badClicks++;
-        if (stats.badClicks > 20) {
+        if (stats.badClicks > BAD_CLICK_TOLERANCE) {
             stats.isFlaggedBot = true;
             console.log(`BOT (Vitesse) : ${socket.id}`);
         }
@@ -259,22 +260,16 @@ io.on('connection', (socket) => {
     }
     if (stats.badClicks > 0) stats.badClicks--;
 
-    // 2. NOUVEAU : Détection Régularité (Trop parfait)
+    // 2. DÉTECTION RÉGULARITÉ (Tolérance 2ms)
     stats.clickHistory.push(now);
-    if (stats.clickHistory.length > CLICK_HISTORY_SIZE) stats.clickHistory.shift(); // Garder les derniers
+    if (stats.clickHistory.length > CLICK_HISTORY_SIZE) stats.clickHistory.shift(); 
 
-    // On analyse seulement si le joueur clique activement (histoire pleine)
     if (stats.clickHistory.length === CLICK_HISTORY_SIZE) {
-        // Calcul des intervalles (deltas) entre les clics
         let deltas = [];
         for(let i = 0; i < CLICK_HISTORY_SIZE - 1; i++) {
             deltas.push(stats.clickHistory[i+1] - stats.clickHistory[i]);
         }
-        
-        // Si l'écart type est minuscule (ex: < 5ms), c'est un robot
         const stdDev = calculateStandardDeviation(deltas);
-        
-        // On vérifie aussi que la vitesse moyenne est élevée (< 300ms) pour ne pas punir ceux qui cliquent 1 fois par seconde
         const avgSpeed = deltas.reduce((a,b)=>a+b) / deltas.length;
 
         if (avgSpeed < 300 && stdDev < MIN_VARIANCE_THRESHOLD) {
@@ -294,11 +289,6 @@ io.on('connection', (socket) => {
     stats.clicks++; stats.contribution += total;
     gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
   });
-
-  // ... (Les handlers buy_upgrade, buy_boost, etc. sont identiques à avant) ...
-  // Pour gagner de la place, je ne les recolle pas ici, assurez-vous de garder les blocs existants
-  // ou reprenez ceux du message précédent qui étaient corrects.
-  // Je remets juste le CHAT qui est important.
 
   socket.on('buy_upgrade', (name) => {
       let bought = false;
