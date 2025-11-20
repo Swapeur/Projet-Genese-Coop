@@ -3,6 +3,7 @@ const app = express();
 const http = require('http').createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(http);
+const https = require('https');
 const fs = require('fs');
 
 // --- SÉCURITÉ & MIDDLEWARE ---
@@ -19,7 +20,6 @@ const TICK_RATE_MS = 200;
 const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
-// Prestige accessible plus tôt (100 Trillions) pour fluidifier le mid-game
 const PRESTIGE_THRESHOLD = 1e14; 
 
 // REGLAGES JEU
@@ -31,8 +31,7 @@ const CHAT_UNLOCK_CLICKS = 50;
 const CHAT_COOLDOWN_MS = 3000;
 const MAX_CHAT_HISTORY = 50;
 
-// --- REGLAGES BONUS (ÉQUILIBRÉ) ---
-// Fréquence modérée (0.2% par tick) et durée raisonnable (90s)
+// --- REGLAGES BONUS ---
 const BONUS_CHANCE_PER_TICK = 0.002; 
 const BONUS_REWARD_SECONDS = 90; 
 
@@ -123,10 +122,10 @@ const PRESTIGE_UPGRADE_DEFINITIONS = {
   'p_clics_experts': { id: 'p_clics_experts', name: 'Clics d\'Expert', description: 'Double la puissance de base des clics.', cost: 25 }
 };
 
-// --- ETAT DU JEU (BALANCE LISSÉE) ---
+// --- ETAT DU JEU ---
 const defaultGameState = {
   totalInfectedCells: 0, 
-  fractionalResidue: 0, // Moteur de décimales
+  fractionalResidue: 0,
   totalCellsEver: 0, 
   totalClicks: 0, 
   clickPower: 1, 
@@ -148,8 +147,6 @@ const defaultGameState = {
   clonage_humain: 0, cost_clonage: 7500000000, gain_clonage: 20000000,
   terraformation_virale: 0, cost_terraformation: 95000000000, gain_terraformation: 350000000,
   singularite_biologique: 0, cost_singularite: 1500000000000, gain_singularite: 8000000000,
-  
-  // NOUVEAUX BÂTIMENTS ENDGAME
   echos_dimensionnels: 0, cost_echo: 10000000000000, gain_echo: 50000000000, 
   nanobots_autoreplicants: 0, cost_nano: 250000000000000, gain_nano: 1500000000000,
   supernova_virale: 0, cost_nova: 8000000000000000, gain_nova: 100000000000000
@@ -392,7 +389,6 @@ io.on('connection', (socket) => {
     else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
     else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
     
-    // ENDGAME BUILDINGS
     else if (name === 'echos_dimensionnels') bought = checkAndBuy('echos_dimensionnels', 'cost_echo');
     else if (name === 'nanobots_autoreplicants') bought = checkAndBuy('nanobots_autoreplicants', 'cost_nano');
     else if (name === 'supernova_virale') bought = checkAndBuy('supernova_virale', 'cost_nova');
@@ -494,3 +490,22 @@ setInterval(() => saveGameState(gameState), SAVE_INTERVAL_MS);
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => console.log(`Serveur sur le port ${PORT}`));
+
+// --- SYSTEME ANTI-VEILLE (SELF-PING) ---
+const MY_RENDER_URL = 'https://projet-genese-coop.onrender.com'; 
+
+function keepAlive() {
+    https.get(MY_RENDER_URL, (res) => {
+        if (res.statusCode === 200) {
+            // On logue moins souvent pour ne pas polluer la console (toutes les 3 min ça fait beaucoup)
+            // console.log(`✅ Ping anti-veille réussi`); 
+        } else {
+            console.log(`⚠️ Ping anti-veille reçu mais statut étrange: ${res.statusCode}`);
+        }
+    }).on('error', (err) => {
+        console.error(`❌ Erreur ping anti-veille: ${err.message}`);
+    });
+}
+
+// Ping toutes les 3 minutes (3 * 60 * 1000 = 180000 ms)
+setInterval(keepAlive, 180000);

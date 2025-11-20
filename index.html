@@ -109,11 +109,25 @@
       transition: transform 0.05s, filter 0.2s; 
       position: relative; 
       z-index: 25; 
+      overflow: hidden; /* Nécessaire pour le Ripple */
     }
     #cell-button:active { transform: scale(0.95); }
     #cell-button.clicked { animation: cellClickAnim 0.1s; }
     @keyframes cellClickAnim { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
     
+    /* --- EFFET RIPPLE --- */
+    .ripple {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.7);
+      transform: scale(0);
+      animation: rippleAnim 0.6s linear;
+      pointer-events: none;
+    }
+    @keyframes rippleAnim {
+      to { transform: scale(2.5); opacity: 0; }
+    }
+
     #click-info { 
       margin-top: 15px; 
       color: var(--viral-green); 
@@ -134,32 +148,73 @@
     @keyframes particleFly { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
     @keyframes passiveFly { 0% { opacity: 0.6; } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
 
+    /* --- PARTICULES D'ACHAT (EXPLOSION) --- */
+    .buy-particle {
+      position: absolute;
+      width: 8px; 
+      height: 8px;
+      background: var(--prestige-color); 
+      box-shadow: 0 0 6px var(--prestige-glow);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      animation: buyExplosion 0.8s ease-out forwards;
+    }
+    @keyframes buyExplosion {
+      0% { opacity: 1; transform: translate(0, 0) scale(1); }
+      100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.5); }
+    }
+
     .bonus-mutation { position: absolute; font-size: 4em; cursor: pointer; filter: drop-shadow(0 0 10px var(--viral-green)); animation: pulseBonus 0.5s infinite alternate, popIn 0.3s ease-out; z-index: 1000; user-select: none; }
     @keyframes pulseBonus { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
     @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
     h2 { color: var(--text-color); margin-bottom: 15px; margin-top: 10px; padding-left: 5px; border-left: 3px solid var(--title-color); }
-    .store-item { background-color: #21262d; border: 1px solid var(--border-color); border-radius: 5px; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s, border-color 0.2s; }
-    .store-item:hover { background-color: #30363d; border-color: var(--title-color); }
+    
+    .store-item { 
+        background-color: #21262d; 
+        border: 1px solid var(--border-color); 
+        border-radius: 5px; 
+        padding: 12px; 
+        cursor: pointer; 
+        display: none; 
+        justify-content: space-between; 
+        align-items: center; 
+        /* Mise à jour transition pour l'effet lift */
+        transition: background 0.2s, border-color 0.2s, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
+    }
+    .store-item.revealed {
+        display: flex;
+        animation: fadeIn 0.5s;
+    }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    
+    /* --- EFFET LIFT SURVOL --- */
+    .store-item:hover { 
+        background-color: #30363d; 
+        border-color: var(--title-color); 
+        transform: translateY(-5px) scale(1.02); /* Soulèvement */
+        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        z-index: 100;
+    }
     .store-item.purchased-anim { animation: flashGreen 0.3s; } .store-item.error-anim { animation: shakeRed 0.3s; }
     .item-info h3 { font-size: 1em; color: var(--text-color); } .item-desc { font-size: 0.8em; color: #8b949e; font-style: italic; margin-top: 2px; } .item-gain { font-size: 0.85em; color: var(--viral-green); margin-top: 2px; }
     .item-stats { text-align: right; min-width: 80px; } .item-cost { display: block; font-size: 1em; color: var(--viral-green); font-weight: bold; } .item-count { display: block; font-size: 1.4em; color: #fff; font-weight: bold; margin-top: 2px; }
 
-    /* --- ZONE DE RECHERCHE CORRIGÉE (ESPACEMENT) --- */
     #boost-area { 
         background: #21262d; 
         border: 1px solid var(--border-color); 
         border-radius: 5px; 
-        padding: 15px; /* Plus de padding interne */
-        min-height: 80px; /* Hauteur minimale augmentée */
-        margin-bottom: 25px; /* Grosse marge en bas pour séparer de "Améliorations" */
+        padding: 15px; 
+        min-height: 80px; 
+        margin-bottom: 25px; 
         display: flex;
         flex-direction: column;
         gap: 10px;
     }
     #boost-area h3 {
         font-size: 1.1em;
-        color: var(--prestige-color); /* Couleur distincte pour le titre Recherche */
+        color: var(--prestige-color); 
         margin-bottom: 5px;
         border-bottom: 1px solid rgba(255, 193, 7, 0.2);
         padding-bottom: 5px;
@@ -167,7 +222,7 @@
     #boost-container { 
         display: flex; 
         flex-wrap: wrap; 
-        gap: 8px; /* Espace augmenté entre les icônes */
+        gap: 8px; 
     }
     .boost-item { 
         width: 45px; 
@@ -181,7 +236,7 @@
         font-size: 1.5em; 
         cursor: pointer; 
         transition: transform 0.2s; 
-        flex-shrink: 0; /* Empêche l'écrasement */
+        flex-shrink: 0; 
     }
     .boost-item:hover { transform: scale(1.1); border-color: var(--viral-green); } .boost-item.error-anim { animation: shakeRed 0.3s; }
 
@@ -240,7 +295,7 @@
       <div id="boost-area"><h3>Recherche</h3><div id="boost-container"></div></div>
       <h2>Améliorations</h2>
       
-      <div class="store-item" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Tiens ? Un troisième bras a poussé.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
+      <div class="store-item revealed" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Tiens ? Un troisième bras a poussé.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
       
       <div class="store-item" id="b-oiseau"><div class="item-info"><h3>Vecteur Oiseau</h3><p class="item-desc">Roucoule, tousse, propage, répète.</p><p class="item-gain">+1 CI/s</p></div><div class="item-stats"><span class="item-cost">100</span><span class="item-count">0</span></div></div>
       
@@ -305,9 +360,24 @@
     }
 
     const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
-    loginForm.onsubmit = (e) => { e.preventDefault(); const name = loginInput.value.trim(); if(name.length > 0) { if(audioCtx.state === 'suspended') audioCtx.resume(); socket.emit('set_username', name); currentUsernameDisplay.innerText = name; loginOverlay.style.display = 'none'; } else { loginInput.style.borderColor = "var(--error-color)"; setTimeout(() => loginInput.style.borderColor = "var(--border-color)", 300); } };
     
-    // --- SYSTÈME DE CHAT HTTP ---
+    if(localStorage.getItem('viral_username')) loginInput.value = localStorage.getItem('viral_username');
+
+    loginForm.onsubmit = (e) => { 
+        e.preventDefault(); 
+        const name = loginInput.value.trim(); 
+        if(name.length > 0) { 
+            if(audioCtx.state === 'suspended') audioCtx.resume(); 
+            socket.emit('set_username', name); 
+            currentUsernameDisplay.innerText = name; 
+            localStorage.setItem('viral_username', name); 
+            loginOverlay.style.display = 'none'; 
+        } else { 
+            loginInput.style.borderColor = "var(--error-color)"; 
+            setTimeout(() => loginInput.style.borderColor = "var(--border-color)", 300); 
+        } 
+    };
+    
     const chatForm = document.getElementById('chat-form'); 
     const chatInput = document.getElementById('chat-input'); 
     const chatMsg = document.getElementById('chat-messages');
@@ -379,7 +449,11 @@
       let userClass = specificClass || 'msg-user';
       div.innerHTML = `<span class="${userClass}">${user}:</span> <span class="msg-text">${text}</span>`; 
       chatMsg.appendChild(div); 
-      chatMsg.scrollTop = chatMsg.scrollHeight; 
+      
+      const isAtBottom = chatMsg.scrollHeight - chatMsg.scrollTop <= chatMsg.clientHeight + 100;
+      if(isAtBottom || user === currentUsernameDisplay.innerText) {
+           chatMsg.scrollTop = chatMsg.scrollHeight;
+      }
     }
     setInterval(pollChat, 2000);
     
@@ -413,11 +487,78 @@
 
     function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost" style="color:var(--viral-green)">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
-    for(let k in builds) { const el = document.getElementById(builds[k]); el.onclick = () => { if(!lastState) return; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); if(currentScore >= cost) { socket.emit('buy_upgrade', k); el.classList.add('purchased-anim'); setTimeout(()=>el.classList.remove('purchased-anim'),300); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; if(k.startsWith('echos')) costKey = 'cost_echo'; if(k.startsWith('nanobots')) costKey = 'cost_nano'; if(k.startsWith('supernova')) costKey = 'cost_nova'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; }
+    
+    // --- FONCTION POUR L'EXPLOSION DE PARTICULES À L'ACHAT ---
+    function spawnBuyExplosion(x, y) {
+      const colors = ['#ffc107', '#ffffff', '#58a6ff']; 
+      for(let i=0; i<12; i++) {
+        const p = document.createElement('div');
+        p.className = 'buy-particle';
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.background = colors[Math.floor(Math.random()*colors.length)];
+        
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 60 + 30;
+        const tx = Math.cos(angle) * velocity;
+        const ty = Math.sin(angle) * velocity;
+        
+        p.style.setProperty('--tx', tx + 'px');
+        p.style.setProperty('--ty', ty + 'px');
+        
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 800);
+      }
+    }
+
+    for(let k in builds) { 
+        const el = document.getElementById(builds[k]); 
+        el.onclick = (e) => { 
+            if(!lastState) return; 
+            const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); 
+            if(currentScore >= cost) { 
+                socket.emit('buy_upgrade', k); 
+                el.classList.add('purchased-anim'); 
+                setTimeout(()=>el.classList.remove('purchased-anim'),300); 
+                Sound.buy(); 
+                
+                // Effet d'explosion
+                let ex = e.clientX;
+                let ey = e.clientY;
+                if(!ex || !ey) {
+                    const r = el.getBoundingClientRect();
+                    ex = r.left + r.width/2;
+                    ey = r.top + r.height/2;
+                }
+                spawnBuyExplosion(ex, ey);
+            } else { 
+                el.classList.add('error-anim'); 
+                setTimeout(()=>el.classList.remove('error-anim'),300); 
+            } 
+        }; 
+        el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; if(k.startsWith('echos')) costKey = 'cost_echo'; if(k.startsWith('nanobots')) costKey = 'cost_nano'; if(k.startsWith('supernova')) costKey = 'cost_nova'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; 
+    }
     
     cellBtn.onclick = (e) => { 
       if (!e.isTrusted) return; 
       socket.emit('click_cell'); 
+
+      // --- EFFET RIPPLE SUR LE BOUTON ---
+      const ripple = document.createElement('div');
+      ripple.className = 'ripple';
+      const rect = cellBtn.getBoundingClientRect();
+      const size = Math.max(rect.width, rect.height); 
+      ripple.style.width = ripple.style.height = size + 'px';
+      
+      let x = e.clientX - rect.left - size/2;
+      let y = e.clientY - rect.top - size/2;
+      if(e.clientX === 0 && e.clientY === 0) { x = -size/2 + rect.width/2; y = -size/2 + rect.height/2; }
+
+      ripple.style.left = x + 'px';
+      ripple.style.top = y + 'px';
+      cellBtn.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 600);
+      
       cellBtn.classList.add('clicked'); 
       setTimeout(()=>cellBtn.classList.remove('clicked'),100); 
       spawnParticle(cellBtn, 5); 
@@ -448,7 +589,6 @@
       
       const logScore = Math.log10(lastState.totalCellsEver + 1);
       const hue = (logScore * 10) % 360; 
-      // Apply filter to container, not body, to keep canvas neutral
       document.querySelector('.container').style.filter = `hue-rotate(${hue}deg)`;
 
       document.getElementById('player-count').innerText = 'Scientifiques: ' + d.players; 
@@ -480,21 +620,60 @@
     function spawnParticle(src, n) { const rect = src.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const area = document.getElementById('game-area').getBoundingClientRect(); for(let i=0; i<n; i++) { const p = document.createElement('div'); p.className = 'particle'; const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px'; p.style.left = (rect.left - area.left + rect.width/2)+'px'; p.style.top = (rect.top - area.top + rect.height/2)+'px'; const tx = (dest.left - rect.left) + (Math.random()-0.5)*50; const ty = (dest.top - rect.top) + (Math.random()-0.5)*50; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); partCont.appendChild(p); setTimeout(()=>p.remove(), 1000); } }
     function spawnPassive() { const rect = storeEl.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const p = document.createElement('div'); p.className='passive-particle'; const s = Math.random()*3+2; p.style.width=s+'px'; p.style.height=s+'px'; const startY = Math.random() * window.innerHeight; p.style.left = rect.left+'px'; p.style.top = startY+'px'; const tx = dest.left - rect.left + 50; const ty = (dest.top + 20) - startY; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); passPartCont.appendChild(p); setTimeout(()=>p.remove(), 2000); }
 
-    function render() { try { if(lastState) { 
-      const delta = Date.now() - lastUpdate; 
-      const cps = lastState.cellsPerSecond || 0; 
-      const pred = lastState.totalInfectedCells + (cps/1000 * delta); 
-      currentScore = Math.floor(pred); 
-      scoreEl.innerText = isNaN(currentScore) ? "0" : formatNumber(currentScore); 
-      
-      const logScore = Math.log10(lastState.totalCellsEver + 1);
-      const hue = (logScore * 10) % 360; 
-      // Apply filter to container, not body, to keep canvas neutral
-      document.querySelector('.container').style.filter = `hue-rotate(${hue}deg)`;
+    function render() { 
+      try { 
+        if(lastState) { 
+          const delta = Date.now() - lastUpdate; 
+          const cps = lastState.cellsPerSecond || 0; 
+          const pred = lastState.totalInfectedCells + (cps/1000 * delta); 
+          currentScore = Math.floor(pred); 
+          scoreEl.innerText = isNaN(currentScore) ? "0" : formatNumber(currentScore); 
+          
+          document.title = formatNumber(currentScore) + " CI - Genèse";
 
-      for(let k in builds) { const el = document.getElementById(builds[k]); if(el) { const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); el.style.opacity = (currentScore >= cost) ? 1 : 0.5; el.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; } } const bItems = document.getElementsByClassName('boost-item'); for(let b of bItems) { const cost = parseFloat(b.dataset.cost); b.style.opacity = (currentScore >= cost) ? 1 : 0.5; b.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; } if(cps > 0) { const chance = Math.log10(cps+1) * 0.05; if(Math.random() < chance) spawnPassive(); } } } catch(e) { console.error("Erreur rendu", e); } requestAnimationFrame(render); } requestAnimationFrame(render);
+          const logScore = Math.log10(lastState.totalCellsEver + 1);
+          const hue = (logScore * 10) % 360; 
+          document.querySelector('.container').style.filter = `hue-rotate(${hue}deg)`;
 
-    // --- SCRIPT DU FOND ANIMÉ (CANVAS) ---
+          for(let k in builds) { 
+              const el = document.getElementById(builds[k]); 
+              if(el) { 
+                const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0);
+                const count = parseInt(el.querySelector('.item-count').innerText || 0);
+                const threshold = cost * 0.6; 
+                
+                if (count > 0 || currentScore >= threshold) {
+                  if (!el.classList.contains('revealed')) {
+                      el.classList.add('revealed');
+                  }
+                }
+
+                if (el.classList.contains('revealed')) {
+                    el.style.opacity = (currentScore >= cost) ? 1 : 0.5; 
+                    el.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; 
+                }
+              } 
+          }
+          
+          const bItems = document.getElementsByClassName('boost-item'); 
+          for(let b of bItems) { 
+              const cost = parseFloat(b.dataset.cost); 
+              b.style.opacity = (currentScore >= cost) ? 1 : 0.5; 
+              b.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; 
+          } 
+          
+          if(cps > 0) { 
+              const chance = Math.log10(cps+1) * 0.05; 
+              if(Math.random() < chance) spawnPassive(); 
+          } 
+        } 
+      } catch(e) { 
+          console.error("Erreur rendu", e); 
+      } 
+      requestAnimationFrame(render); 
+    } 
+    requestAnimationFrame(render);
+
     (function initBioBackground() {
       const canvas = document.getElementById('bio-canvas');
       const ctx = canvas.getContext('2d');
@@ -524,7 +703,6 @@
           ctx.arc(this.x, this.y, r, 0, Math.PI*2);
           ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha})`;
           ctx.fill();
-          // Nucleus
           ctx.beginPath();
           ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI*2);
           ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha + 0.1})`;
@@ -547,7 +725,6 @@
       function animate() {
         ctx.clearRect(0, 0, w, h);
         
-        // Connections
         ctx.strokeStyle = 'rgba(63, 185, 80, 0.05)';
         ctx.lineWidth = 1;
         for(let i=0; i<particles.length; i++) {
