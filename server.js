@@ -5,37 +5,77 @@ const { Server } = require("socket.io");
 const io = new Server(http);
 const fs = require('fs');
 
-// --- SÉCURITÉ ---
+// --- SÉCURITÉ & MIDDLEWARE ---
 const xss = require('xss');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(rateLimit({ windowMs: 15*60*1000, max: 100 }));
+app.use(express.json());
+app.use(rateLimit({ windowMs: 15*60*1000, max: 1000 }));
 
 // --- CONSTANTES JEU ---
 const TICK_RATE_MS = 200; 
 const COST_MULTIPLIER = 1.15;
 const SAVE_FILE = 'gameState.json';
 const SAVE_INTERVAL_MS = 10000;
-const PRESTIGE_THRESHOLD = 1e15; 
+// Prestige accessible plus tôt (100 Trillions) pour fluidifier le mid-game
+const PRESTIGE_THRESHOLD = 1e14; 
 
 // REGLAGES JEU
-const CLICK_COOLDOWN_MS = 40; // Plafond physique (25 clics/s)
+const CLICK_COOLDOWN_MS = 40; 
 const MAX_TABS_PER_DEVICE = 3; 
-const CHAT_COOLDOWN_MS = 2000; 
 const CHAT_UNLOCK_CLICKS = 50; 
 
-// REGLAGES BONUS (MUTATIONS)
-const BONUS_CHANCE_PER_TICK = 0.005; // ~0.5% par tick (toutes les 40s en moy.)
-const BONUS_REWARD_SECONDS = 300; // Gain = 5 minutes de production
+// --- REGLAGES CHAT ---
+const CHAT_COOLDOWN_MS = 3000;
+const MAX_CHAT_HISTORY = 50;
 
-// Variables
+// --- REGLAGES BONUS (ÉQUILIBRÉ) ---
+// Fréquence modérée (0.2% par tick) et durée raisonnable (90s)
+const BONUS_CHANCE_PER_TICK = 0.002; 
+const BONUS_REWARD_SECONDS = 90; 
+
+// Variables globales
 let currentTickClicks = 0;
 let lastClickTime = new Map();
-let playerStats = new Map();
+let playerStats = new Map(); 
 
-// --- BOOSTS ---
+// --- SYSTEME DE CHAT (POLLING) ---
+const chatHistory = [];
+
+app.get('/api/chat', (req, res) => {
+    const since = parseInt(req.query.since) || 0;
+    const newMessages = chatHistory.filter(m => m.timestamp > since);
+    res.json(newMessages);
+});
+
+app.post('/api/chat', (req, res) => {
+    const { user, text } = req.body;
+    if (!text || typeof text !== 'string' || text.trim().length === 0) return res.status(400).json({ error: "Message vide" });
+
+    let playerFound = false;
+    let playerStatsRef = null;
+    for (const [_, stats] of playerStats) {
+        if (stats.name === user) { playerFound = true; playerStatsRef = stats; break; }
+    }
+
+    if (!playerFound) return res.status(403).json({ error: "Session invalide." });
+    if (playerStatsRef.clicks < CHAT_UNLOCK_CLICKS) return res.status(403).json({ error: `Verrouillé: ${CHAT_UNLOCK_CLICKS} clics requis.` });
+
+    const now = Date.now();
+    const lastTime = playerStatsRef.lastChatTime || 0;
+    if (now - lastTime < CHAT_COOLDOWN_MS) return res.status(429).json({ error: "Doucement !" });
+
+    playerStatsRef.lastChatTime = now;
+    const msgObj = { id: Date.now() + Math.random(), timestamp: now, user: xss(user), text: xss(text.trim().substring(0, 100)) };
+    chatHistory.push(msgObj);
+    if (chatHistory.length > MAX_CHAT_HISTORY) chatHistory.shift();
+
+    res.json({ success: true });
+});
+
+// --- BOOSTS DEFINITIONS ---
 const BOOST_DEFINITIONS = {
   'seringue_precision': { id: 'seringue_precision', name: 'Seringue de Précision', description: 'Double la puissance de tous les clics.', cost: 2000, conditionType: 'totalClicks', conditionValue: 500 },
   'doigts_bioniques': { id: 'doigts_bioniques', name: 'Doigts Bioniques', description: 'Multiplie la puissance des clics par 3.', cost: 500000, conditionType: 'totalClicks', conditionValue: 2500 },
@@ -66,7 +106,14 @@ const BOOST_DEFINITIONS = {
   'singu_t1': { id: 'singu_t1', name: 'Esprit de Ruche', description: 'Double la production de la Singularité.', cost: 50000000000000, conditionType: 'buildingCount', conditionTarget: 'singularite_biologique', conditionValue: 5 },
   'contamination_aviaire': { id: 'contamination_aviaire', name: 'Contamination Aviaire', description: 'Chaque Oiseau augmente la production d\'Eau de 1%.', cost: 50000000, conditionType: 'buildingCount', conditionTarget: 'vecteurs_oiseaux', conditionValue: 25, condition2Type: 'buildingCount', condition2Target: 'contamination_eau', condition2Value: 25 },
   'synergie_humide': { id: 'synergie_humide', name: 'Irrigation Infectée', description: 'Chaque Source d\'Eau augmente la production des Fermes de 0.5%.', cost: 5000000000, conditionType: 'buildingCount', conditionTarget: 'contamination_eau', conditionValue: 50, condition2Type: 'buildingCount', condition2Target: 'fermes_virales', conditionValue: 25 },
-  'matrice_virale': { id: 'matrice_virale', name: 'Matrice Virale', description: 'Augmente la production de TOUS les bâtiments de 50%.', cost: 100000000000, conditionType: 'buildingCount', conditionTarget: 'centres_contagion', conditionValue: 50 }
+  'matrice_virale': { id: 'matrice_virale', name: 'Matrice Virale', description: 'Augmente la production de TOUS les bâtiments de 50%.', cost: 100000000000, conditionType: 'buildingCount', conditionTarget: 'centres_contagion', conditionValue: 50 },
+  
+  // --- BOOSTS ENDGAME ---
+  'echo_t1': { id: 'echo_t1', name: 'Résonance Quantique', description: 'Double la production des Échos Dimensionnels.', cost: 100000000000000, conditionType: 'buildingCount', conditionTarget: 'echos_dimensionnels', conditionValue: 10 },
+  'nano_t1': { id: 'nano_t1', name: 'Grey Goo', description: 'Double la production des Nanobots.', cost: 2000000000000000, conditionType: 'buildingCount', conditionTarget: 'nanobots_autoreplicants', conditionValue: 10 },
+  'nova_t1': { id: 'nova_t1', name: 'Explosion Gamma', description: 'Double la production des Supernovas.', cost: 80000000000000000, conditionType: 'buildingCount', conditionTarget: 'supernova_virale', conditionValue: 5 },
+  'omnipotence': { id: 'omnipotence', name: 'Omnipotence', description: 'Chaque Supernova multiplie TOUTE la production de 10%.', cost: 200000000000000000, conditionType: 'buildingCount', conditionTarget: 'supernova_virale', conditionValue: 10 },
+  'doigt_divin': { id: 'doigt_divin', name: 'Toucher Divin', description: 'Le clic gagne +1% de la prod des Nanobots.', cost: 500000000000000, conditionType: 'totalClicks', conditionValue: 200000 }
 };
 
 const PRESTIGE_UPGRADE_DEFINITIONS = {
@@ -76,9 +123,19 @@ const PRESTIGE_UPGRADE_DEFINITIONS = {
   'p_clics_experts': { id: 'p_clics_experts', name: 'Clics d\'Expert', description: 'Double la puissance de base des clics.', cost: 25 }
 };
 
+// --- ETAT DU JEU (BALANCE LISSÉE) ---
 const defaultGameState = {
-  totalInfectedCells: 0, totalCellsEver: 0, totalClicks: 0, clickPower: 1, clickPowerBonusFromCPS: 0, 
-  cellsPerSecond: 0, clicksPerSecond: 0, prestigePoints: 0, purchasedBoosts: [], purchasedPrestigeUpgrades: [],
+  totalInfectedCells: 0, 
+  fractionalResidue: 0, // Moteur de décimales
+  totalCellsEver: 0, 
+  totalClicks: 0, 
+  clickPower: 1, 
+  clickPowerBonusFromCPS: 0, 
+  cellsPerSecond: 0, 
+  clicksPerSecond: 0, 
+  prestigePoints: 0, 
+  purchasedBoosts: [], 
+  purchasedPrestigeUpgrades: [],
   mutations_mineures: 0, cost_mutation: 15, gain_mutation: 0.1,
   vecteurs_oiseaux: 0,   cost_oiseau: 100,  gain_oiseau: 1,
   contamination_eau: 0,  cost_eau: 1100,    gain_eau: 8,
@@ -90,10 +147,23 @@ const defaultGameState = {
   satellite_dispersion: 0, cost_satellite: 600000000, gain_satellite: 1200000,
   clonage_humain: 0, cost_clonage: 7500000000, gain_clonage: 20000000,
   terraformation_virale: 0, cost_terraformation: 95000000000, gain_terraformation: 350000000,
-  singularite_biologique: 0, cost_singularite: 1500000000000, gain_singularite: 8000000000
+  singularite_biologique: 0, cost_singularite: 1500000000000, gain_singularite: 8000000000,
+  
+  // NOUVEAUX BÂTIMENTS ENDGAME
+  echos_dimensionnels: 0, cost_echo: 10000000000000, gain_echo: 50000000000, 
+  nanobots_autoreplicants: 0, cost_nano: 250000000000000, gain_nano: 1500000000000,
+  supernova_virale: 0, cost_nova: 8000000000000000, gain_nova: 100000000000000
 };
 
-function calculatePrestigePoints(cells) { return Math.floor(Math.sqrt(cells / PRESTIGE_THRESHOLD)); }
+function safeNum(val, fallback = 0) {
+    if (typeof val !== 'number' || isNaN(val) || !isFinite(val)) return fallback;
+    return val;
+}
+
+function calculatePrestigePoints(cells) { 
+    const safeCells = safeNum(cells);
+    return Math.floor(Math.sqrt(safeCells / PRESTIGE_THRESHOLD)); 
+}
 
 function getPlayerScalingFactor() { 
   let activePlayers = 0;
@@ -110,31 +180,26 @@ function applyAllPurchasedBoosts(state) {
   if (state.purchasedPrestigeUpgrades.includes('p_clics_experts')) prestigeClickBonus = 2;
 
   state.clickPower = 1 * prestigeClickBonus; state.clickPowerBonusFromCPS = 0;
-  state.gain_mutation = defaultGameState.gain_mutation * prestigeProdBonus;
-  state.gain_oiseau = defaultGameState.gain_oiseau * prestigeProdBonus;
-  state.gain_eau = defaultGameState.gain_eau * prestigeProdBonus;
-  state.gain_aerosol = defaultGameState.gain_aerosol * prestigeProdBonus;
-  state.gain_aeroport = defaultGameState.gain_aeroport * prestigeProdBonus;
-  state.gain_ferme = defaultGameState.gain_ferme * prestigeProdBonus;
-  state.gain_centre = defaultGameState.gain_centre * prestigeProdBonus;
-  state.gain_propagande = defaultGameState.gain_propagande * prestigeProdBonus;
-  state.gain_satellite = defaultGameState.gain_satellite * prestigeProdBonus;
-  state.gain_clonage = defaultGameState.gain_clonage * prestigeProdBonus;
-  state.gain_terraformation = defaultGameState.gain_terraformation * prestigeProdBonus;
-  state.gain_singularite = defaultGameState.gain_singularite * prestigeProdBonus;
+  
+  const keys = ['mutation', 'oiseau', 'eau', 'aerosol', 'aeroport', 'ferme', 'centre', 'propagande', 'satellite', 'clonage', 'terraformation', 'singularite', 'echo', 'nano', 'nova'];
+  keys.forEach(k => { state[`gain_${k}`] = defaultGameState[`gain_${k}`] * prestigeProdBonus; });
 
   let synergyBonusWater = 0; let synergyBonusFarms = 0; let globalMultiplier = 1;
+  
   for (const boostId of state.purchasedBoosts) {
     const b = BOOST_DEFINITIONS[boostId]; if(!b) continue;
+    
     if (boostId === 'seringue_precision') state.clickPower *= 2;
     if (boostId === 'doigts_bioniques') state.clickPower *= 3;
     if (boostId === 'gants_titane') state.clickPower *= 5;
     if (boostId === 'rage_virale') state.clickPower *= 10;
     if (boostId === 'clics_contamines') state.clickPowerBonusFromCPS += 0.01;
     if (boostId === 'osmose_tactile') state.clickPowerBonusFromCPS += 0.02;
-    if (boostId === 'neurones_connectes') state.clickPower += (1000 * state.centres_contagion) * prestigeClickBonus;
-    if (boostId === 'mutation_boost_clic_t1') state.clickPower += (0.5 * state.mutations_mineures) * prestigeClickBonus;
-    if (boostId === 'mutation_boost_clic_t2') state.clickPower += (1 * state.mutations_mineures) * prestigeClickBonus;
+    if (boostId === 'doigt_divin') state.clickPower += (state.gain_nano * safeNum(state.nanobots_autoreplicants) * 0.01);
+    
+    if (boostId === 'neurones_connectes') state.clickPower += (1000 * safeNum(state.centres_contagion)) * prestigeClickBonus;
+    if (boostId === 'mutation_boost_clic_t1') state.clickPower += (0.5 * safeNum(state.mutations_mineures)) * prestigeClickBonus;
+    if (boostId === 'mutation_boost_clic_t2') state.clickPower += (1 * safeNum(state.mutations_mineures)) * prestigeClickBonus;
     
     if (boostId === 'plumes_aero' || boostId === 'oiseau_t2') state.gain_oiseau *= 2;
     if (boostId === 'filtres_mutagenes' || boostId === 'eau_t2') state.gain_eau *= 2;
@@ -147,16 +212,38 @@ function applyAllPurchasedBoosts(state) {
     if (boostId === 'clone_t1') state.gain_clonage *= 2;
     if (boostId === 'terra_t1') state.gain_terraformation *= 2;
     if (boostId === 'singu_t1') state.gain_singularite *= 2;
+    
+    if (boostId === 'echo_t1') state.gain_echo *= 2;
+    if (boostId === 'nano_t1') state.gain_nano *= 2;
+    if (boostId === 'nova_t1') state.gain_nova *= 2;
+    if (boostId === 'omnipotence') globalMultiplier *= (1 + (0.10 * safeNum(state.supernova_virale)));
 
-    if (boostId === 'contamination_aviaire') synergyBonusWater += (0.01 * state.vecteurs_oiseaux);
-    if (boostId === 'synergie_humide') synergyBonusFarms += (0.005 * state.contamination_eau);
+    if (boostId === 'contamination_aviaire') synergyBonusWater += (0.01 * safeNum(state.vecteurs_oiseaux));
+    if (boostId === 'synergie_humide') synergyBonusFarms += (0.005 * safeNum(state.contamination_eau));
     if (boostId === 'matrice_virale') globalMultiplier *= 1.5;
   }
 
-  state.gain_eau *= (1 + synergyBonusWater); state.gain_ferme *= (1 + synergyBonusFarms);
-  state.gain_mutation *= globalMultiplier; state.gain_oiseau *= globalMultiplier; state.gain_eau *= globalMultiplier; state.gain_aerosol *= globalMultiplier; state.gain_aeroport *= globalMultiplier; state.gain_ferme *= globalMultiplier; state.gain_centre *= globalMultiplier; state.gain_propagande *= globalMultiplier; state.gain_satellite *= globalMultiplier; state.gain_clonage *= globalMultiplier; state.gain_terraformation *= globalMultiplier; state.gain_singularite *= globalMultiplier;
+  state.gain_eau *= (1 + synergyBonusWater); 
+  state.gain_ferme *= (1 + synergyBonusFarms);
+  
+  keys.forEach(k => { state[`gain_${k}`] *= globalMultiplier; });
 
-  state.cellsPerSecond = (state.mutations_mineures * state.gain_mutation) + (state.vecteurs_oiseaux * state.gain_oiseau) + (state.contamination_eau * state.gain_eau) + (state.transmission_aerosol * state.gain_aerosol) + (state.aeroport_international * state.gain_aeroport) + (state.fermes_virales * state.gain_ferme) + (state.centres_contagion * state.gain_centre) + (state.propagande_virale * state.gain_propagande) + (state.satellite_dispersion * state.gain_satellite) + (state.clonage_humain * state.gain_clonage) + (state.terraformation_virale * state.gain_terraformation) + (state.singularite_biologique * state.gain_singularite);
+  state.cellsPerSecond = 
+    (safeNum(state.mutations_mineures) * state.gain_mutation) + 
+    (safeNum(state.vecteurs_oiseaux) * state.gain_oiseau) + 
+    (safeNum(state.contamination_eau) * state.gain_eau) + 
+    (safeNum(state.transmission_aerosol) * state.gain_aerosol) + 
+    (safeNum(state.aeroport_international) * state.gain_aeroport) + 
+    (safeNum(state.fermes_virales) * state.gain_ferme) + 
+    (safeNum(state.centres_contagion) * state.gain_centre) + 
+    (safeNum(state.propagande_virale) * state.gain_propagande) + 
+    (safeNum(state.satellite_dispersion) * state.gain_satellite) + 
+    (safeNum(state.clonage_humain) * state.gain_clonage) + 
+    (safeNum(state.terraformation_virale) * state.gain_terraformation) + 
+    (safeNum(state.singularite_biologique) * state.gain_singularite) +
+    (safeNum(state.echos_dimensionnels) * state.gain_echo) +
+    (safeNum(state.nanobots_autoreplicants) * state.gain_nano) +
+    (safeNum(state.supernova_virale) * state.gain_nova);
 }
 
 function getAvailableBoosts(state) {
@@ -176,12 +263,28 @@ function getAvailableBoosts(state) {
 
 function loadGameState() { 
   try { 
+    if (!fs.existsSync(SAVE_FILE)) return defaultGameState;
     const data = fs.readFileSync(SAVE_FILE, 'utf8'); 
-    const loaded = { ...defaultGameState, ...JSON.parse(data) }; 
-    for(const key in defaultGameState) { if(loaded[key] === undefined) loaded[key] = defaultGameState[key]; }
-    applyAllPurchasedBoosts(loaded); return loaded; 
-  } catch (e) { return defaultGameState; } 
+    if (!data || data.trim() === "") return defaultGameState;
+
+    const parsed = JSON.parse(data);
+    const loaded = { ...defaultGameState, ...parsed }; 
+    
+    if (isNaN(loaded.totalInfectedCells) || !isFinite(loaded.totalInfectedCells)) loaded.totalInfectedCells = 0;
+    if (isNaN(loaded.fractionalResidue)) loaded.fractionalResidue = 0;
+
+    for(const key in defaultGameState) { 
+        if(loaded[key] === undefined) loaded[key] = defaultGameState[key]; 
+        if (typeof defaultGameState[key] === 'number') loaded[key] = safeNum(loaded[key], defaultGameState[key]);
+    }
+    applyAllPurchasedBoosts(loaded); 
+    return loaded; 
+  } catch (e) { 
+    console.error("Reset sauvegarde suite erreur:", e);
+    return defaultGameState; 
+  } 
 }
+
 function saveGameState(state) { fs.writeFile(SAVE_FILE, JSON.stringify(state, null, 2), 'utf8', (err) => { if(err) console.error(err); }); }
 
 let gameState = loadGameState();
@@ -202,9 +305,7 @@ io.on('connection', (socket) => {
   const defaultName = 'Scientifique ' + socket.id.substring(0, 4);
   socket.username = defaultName;
   
-  // Initialisation sans ban
-  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0, hasCustomName: false, activeBonusId: null });
-  
+  playerStats.set(socket.id, { name: defaultName, clicks: 0, contribution: 0, hasCustomName: false, activeBonusId: null, lastChatTime: 0 });
   lastClickTime.set(socket.id, 0);
   sendFullUpdate(socket);
 
@@ -213,59 +314,71 @@ io.on('connection', (socket) => {
         const clean = xss(name.trim().substring(0, 15));
         socket.username = clean;
         const stats = playerStats.get(socket.id);
-        if(stats) {
-            stats.name = clean;
-            stats.hasCustomName = true;
-        }
+        if(stats) { stats.name = clean; stats.hasCustomName = true; }
     }
   });
 
   socket.on('click_cell', () => {
     if(!playerStats.has(socket.id)) return;
     const stats = playerStats.get(socket.id);
-
-    if (!stats.hasCustomName) return; // Pseudo requis
+    if (!stats.hasCustomName) return; 
 
     const now = Date.now();
     const last = lastClickTime.get(socket.id) || 0;
-    if (now - last < CLICK_COOLDOWN_MS) return; // Vitesse plafond (pas de ban)
+    if (now - last < CLICK_COOLDOWN_MS) return; 
     
     lastClickTime.set(socket.id, now);
     
     gameState.totalClicks++; currentTickClicks++;
     const base = gameState.clickPower;
     const bonus = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
-    const total = (base + bonus) / getPlayerScalingFactor();
     
-    stats.clicks++; stats.contribution += total;
-    gameState.totalInfectedCells += total; gameState.totalCellsEver += total;
+    const rawTotal = (base + bonus) / getPlayerScalingFactor();
+    const safeTotal = safeNum(rawTotal); 
+    
+    stats.clicks++; stats.contribution += safeTotal;
+    gameState.fractionalResidue += safeTotal;
+    const intGain = Math.floor(gameState.fractionalResidue);
+    gameState.totalInfectedCells += intGain; 
+    gameState.totalCellsEver += intGain;
+    gameState.fractionalResidue -= intGain;
   });
 
-  // --- BONUS ALÉATOIRES ---
   socket.on('click_bonus', (bonusId) => {
     const stats = playerStats.get(socket.id);
     if (!stats || !stats.activeBonusId) return;
     if (stats.activeBonusId === bonusId) {
-        const reward = Math.max(1000, gameState.cellsPerSecond * BONUS_REWARD_SECONDS);
+        const rawReward = Math.max(1000, gameState.cellsPerSecond * BONUS_REWARD_SECONDS);
+        const reward = Math.floor(safeNum(rawReward)); 
+        
         gameState.totalInfectedCells += reward;
         gameState.totalCellsEver += reward;
         stats.contribution += reward;
         stats.activeBonusId = null;
+        
         const cleanName = xss(stats.name);
-        io.emit('chat_message', { user: "Système", text: `🧬 ${cleanName} a déclenché une Mutation Instable (+${Math.floor(reward)}) !` });
+        const msgObj = { id: Date.now()+Math.random(), timestamp: Date.now(), user: "Système", text: `🧬 ${cleanName} a déclenché une Mutation Instable (+${reward}) !` };
+        chatHistory.push(msgObj);
+        if (chatHistory.length > MAX_CHAT_HISTORY) chatHistory.shift();
     }
   });
 
   socket.on('buy_upgrade', (name) => {
     let bought = false;
     const checkAndBuy = (key, costKey) => {
-      if(gameState[costKey] === undefined) return false;
-      if (gameState.totalInfectedCells >= gameState[costKey]) {
-        gameState.totalInfectedCells -= gameState[costKey]; gameState[key]++;
-        gameState[costKey] = Math.ceil(defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]));
+      const currentCost = safeNum(gameState[costKey]);
+      const currentCount = safeNum(gameState[key]);
+      
+      if (gameState.totalInfectedCells >= currentCost) {
+        gameState.totalInfectedCells -= currentCost; 
+        gameState[key] = currentCount + 1;
+        const nextCostRaw = defaultGameState[costKey] * Math.pow(COST_MULTIPLIER, gameState[key]);
+        gameState[costKey] = Math.ceil(safeNum(nextCostRaw)); 
         return true;
-      } return false;
+      } 
+      return false;
     };
+    
     if (name === 'mutation_mineure') bought = checkAndBuy('mutations_mineures', 'cost_mutation');
     else if (name === 'vecteur_oiseau') bought = checkAndBuy('vecteurs_oiseaux', 'cost_oiseau');
     else if (name === 'contamination_eau') bought = checkAndBuy('contamination_eau', 'cost_eau');
@@ -278,6 +391,11 @@ io.on('connection', (socket) => {
     else if (name === 'clonage_humain') bought = checkAndBuy('clonage_humain', 'cost_clonage');
     else if (name === 'terraformation_virale') bought = checkAndBuy('terraformation_virale', 'cost_terraformation');
     else if (name === 'singularite_biologique') bought = checkAndBuy('singularite_biologique', 'cost_singularite');
+    
+    // ENDGAME BUILDINGS
+    else if (name === 'echos_dimensionnels') bought = checkAndBuy('echos_dimensionnels', 'cost_echo');
+    else if (name === 'nanobots_autoreplicants') bought = checkAndBuy('nanobots_autoreplicants', 'cost_nano');
+    else if (name === 'supernova_virale') bought = checkAndBuy('supernova_virale', 'cost_nova');
 
     if (bought) { applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState); }
   });
@@ -285,10 +403,12 @@ io.on('connection', (socket) => {
   socket.on('buy_boost', (id) => {
     const boost = BOOST_DEFINITIONS[id];
     if (boost && !gameState.purchasedBoosts.includes(id)) {
-      let cost = boost.cost;
-      if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9;
+      let cost = safeNum(boost.cost); 
+      if (gameState.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost = Math.floor(cost * 0.9);
+      
       if (gameState.totalInfectedCells >= cost) {
-        gameState.totalInfectedCells -= cost; gameState.purchasedBoosts.push(id);
+        gameState.totalInfectedCells -= cost; 
+        gameState.purchasedBoosts.push(id);
         applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
       }
     }
@@ -297,8 +417,10 @@ io.on('connection', (socket) => {
   socket.on('buy_prestige_upgrade', (id) => {
     const upg = PRESTIGE_UPGRADE_DEFINITIONS[id];
     if (upg && !gameState.purchasedPrestigeUpgrades.includes(id)) {
-      if (gameState.prestigePoints >= upg.cost) {
-        gameState.prestigePoints -= upg.cost; gameState.purchasedPrestigeUpgrades.push(id);
+      const cost = safeNum(upg.cost);
+      if (gameState.prestigePoints >= cost) {
+        gameState.prestigePoints -= cost; 
+        gameState.purchasedPrestigeUpgrades.push(id);
         applyAllPurchasedBoosts(gameState); sendFullUpdate(io); saveGameState(gameState);
       }
     }
@@ -315,37 +437,15 @@ io.on('connection', (socket) => {
     }
   });
 
-  let lastChatTime = 0;
-  let lastMessageHash = "";
-
-  socket.on('chat_message', (msg) => {
-    if(typeof msg !== 'string') return;
-    
-    const stats = playerStats.get(socket.id);
-    if (!stats || !stats.hasCustomName || stats.clicks < CHAT_UNLOCK_CLICKS) {
-        socket.emit('chat_error', `Débloquez le chat en cliquant ${CHAT_UNLOCK_CLICKS} fois (Actuel: ${stats ? stats.clicks : 0})`);
-        return;
-    }
-
-    const now = Date.now();
-    if (now - lastChatTime < CHAT_COOLDOWN_MS) return;
-
-    const trimmedMsg = msg.trim().substring(0, 100);
-    if(trimmedMsg.length === 0) return;
-    if (trimmedMsg === lastMessageHash) return;
-
-    lastChatTime = now;
-    lastMessageHash = trimmedMsg;
-
-    const cleanMsg = xss(trimmedMsg);
-    io.emit('chat_message', { user: socket.username, text: cleanMsg });
-  });
-
   socket.on('disconnect', () => { lastClickTime.delete(socket.id); playerStats.delete(socket.id); });
 });
 
 function gameLoop() {
-  // SPAWN BONUS
+  if (isNaN(gameState.totalInfectedCells) || !isFinite(gameState.totalInfectedCells)) {
+      console.log("⚠️ Anomalie détectée. Correction...");
+      gameState.totalInfectedCells = 0; 
+  }
+
   for (const [socketId, stats] of playerStats) {
       if (stats.hasCustomName && !stats.activeBonusId) {
           if (Math.random() < BONUS_CHANCE_PER_TICK) {
@@ -358,12 +458,21 @@ function gameLoop() {
   }
 
   const scale = getPlayerScalingFactor();
-  const scaledGain = gameState.cellsPerSecond / scale;
-  const tickGain = scaledGain / (1000 / TICK_RATE_MS);
-  gameState.totalInfectedCells += tickGain; gameState.totalCellsEver += tickGain;
+  const rawCps = safeNum(gameState.cellsPerSecond);
+  const scaledCps = rawCps / scale;
+  const tickGain = scaledCps / (1000 / TICK_RATE_MS);
+  
+  gameState.fractionalResidue = safeNum(gameState.fractionalResidue) + tickGain;
+  const integerGain = Math.floor(gameState.fractionalResidue);
+  
+  if (integerGain > 0) {
+      gameState.totalInfectedCells += integerGain; 
+      gameState.totalCellsEver += integerGain;
+      gameState.fractionalResidue -= integerGain;
+  }
   
   const baseClick = gameState.clickPower;
-  const bonusClick = gameState.cellsPerSecond * gameState.clickPowerBonusFromCPS;
+  const bonusClick = rawCps * gameState.clickPowerBonusFromCPS;
   const currentClickValue = (baseClick + bonusClick) / scale;
   const clickHeat = currentTickClicks / (TICK_RATE_MS / 1000);
   currentTickClicks = 0;

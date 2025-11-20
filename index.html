@@ -14,11 +14,9 @@
       margin: 0; 
       padding: 0; 
       overflow: hidden; 
-      /* NOUVEAU: Transition de couleur */
       transition: filter 2s ease-out;
     }
     h1, h2, h3, h4, p { margin: 0; padding: 0; }
-    /* --- TITRE h1 MODIFIÉ --- */
     h1 { 
       color: var(--title-color); 
       border-bottom: 1px solid var(--border-color); 
@@ -31,7 +29,6 @@
       width: 100%;
       flex-shrink: 0;
     }
-    /* ------------------------ */
     
     .container { display: flex; height: 100vh; width: 100vw; position: relative; z-index: 10; }
     #game-area { 
@@ -57,16 +54,23 @@
     #login-btn { padding: 10px 30px; font-family: inherit; font-size: 1.2em; font-weight: bold; background: var(--viral-green); border: none; color: #000; cursor: pointer; border-radius: 5px; }
     #login-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--viral-glow); }
 
-    #background-cells { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: var(--bg-color); pointer-events: none; }
-    .bg-cell { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(63, 185, 80, 0.05) 0%, transparent 70%); filter: blur(10px); animation: float 20s infinite ease-in-out; }
-    @keyframes float { 0% { transform: translate(0,0); } 50% { transform: translate(20px, -20px); } 100% { transform: translate(0,0); } }
+    /* CANVAS D'ARRIÈRE PLAN */
+    #bio-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.4; 
+    }
 
     .score-panel { 
       background-color: var(--panel-bg); 
-      border: 1px solid var(--border-color); /* CORRECTION: Remplacement de '1險 solid' par '1px solid' */
+      border: 1px solid var(--border-color); 
       padding: 15px 40px; 
       border-radius: 8px; 
-      /* MODIFIE: Ombre plus profonde */
       box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 8px rgba(255, 255, 255, 0.05); 
       margin-top: 0; 
       margin-bottom: 0; 
@@ -75,7 +79,6 @@
     #scoreDisplay { 
       font-size: 3.5em; 
       color: var(--viral-green); 
-      /* MODIFIE: Ombre néon plus puissante */
       text-shadow: 0 0 10px var(--viral-glow), 0 0 20px rgba(63, 185, 80, 0.8);
       font-variant-numeric: tabular-nums; 
       transition: transform 0.1s; 
@@ -85,7 +88,6 @@
     .score-label { font-size: 1.2em; margin-top: 5px; color: #8b949e; }
     #cps-display { color: var(--viral-green); font-size: 1.5em; margin-top: 10px; font-weight: bold; font-variant-numeric: tabular-nums; }
     
-    /* --- MODIFICATION de #player-count --- */
     #player-count { 
       position: absolute; 
       top: 15px; 
@@ -95,7 +97,6 @@
       font-weight: bold; 
       text-shadow: 0 0 8px var(--viral-glow);
     }
-    /* -------------------------------------- */
 
     #cell-button { 
       width: 220px; 
@@ -103,11 +104,7 @@
       background: radial-gradient(circle, #2a5a2f 0%, var(--viral-green) 10%, #1e3f20 70%); 
       border-radius: 50%; 
       border: 4px solid var(--viral-green); 
-      /* MODIFIE: Ombre plus large et profondeur */
-      box-shadow: 
-        0 0 40px var(--viral-glow), 
-        0 0 15px var(--viral-green), 
-        inset 0 0 20px #1e3f20; 
+      box-shadow: 0 0 40px var(--viral-glow), 0 0 15px var(--viral-green), inset 0 0 20px #1e3f20; 
       cursor: pointer; 
       transition: transform 0.05s, filter 0.2s; 
       position: relative; 
@@ -117,7 +114,6 @@
     #cell-button.clicked { animation: cellClickAnim 0.1s; }
     @keyframes cellClickAnim { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
     
-    /* --- MODIFICATION de #click-info --- */
     #click-info { 
       margin-top: 15px; 
       color: var(--viral-green); 
@@ -128,7 +124,6 @@
       text-shadow: 0 0 8px var(--viral-glow); 
       flex-shrink: 0;
     }
-    /* -------------------------------------- */
 
     .float-text { position: absolute; color: #fff; font-weight: bold; font-size: 1.4em; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 5px #000; z-index: 1000; }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.3); } }
@@ -143,19 +138,54 @@
     @keyframes pulseBonus { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
     @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
 
-    h2 { color: var(--text-color); margin-bottom: 10px; padding-left: 5px; border-left: 3px solid var(--title-color); }
+    h2 { color: var(--text-color); margin-bottom: 15px; margin-top: 10px; padding-left: 5px; border-left: 3px solid var(--title-color); }
     .store-item { background-color: #21262d; border: 1px solid var(--border-color); border-radius: 5px; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s, border-color 0.2s; }
     .store-item:hover { background-color: #30363d; border-color: var(--title-color); }
     .store-item.purchased-anim { animation: flashGreen 0.3s; } .store-item.error-anim { animation: shakeRed 0.3s; }
     .item-info h3 { font-size: 1em; color: var(--text-color); } .item-desc { font-size: 0.8em; color: #8b949e; font-style: italic; margin-top: 2px; } .item-gain { font-size: 0.85em; color: var(--viral-green); margin-top: 2px; }
     .item-stats { text-align: right; min-width: 80px; } .item-cost { display: block; font-size: 1em; color: var(--viral-green); font-weight: bold; } .item-count { display: block; font-size: 1.4em; color: #fff; font-weight: bold; margin-top: 2px; }
 
-    #boost-area { background: #21262d; border: 1px solid var(--border-color); border-radius: 5px; padding: 10px; min-height: 60px; }
-    #boost-container { display: flex; flex-wrap: wrap; gap: 5px; }
-    .boost-item { width: 45px; height: 45px; background: #30363d; border: 2px solid var(--title-color); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5em; cursor: pointer; transition: transform 0.2s; }
+    /* --- ZONE DE RECHERCHE CORRIGÉE (ESPACEMENT) --- */
+    #boost-area { 
+        background: #21262d; 
+        border: 1px solid var(--border-color); 
+        border-radius: 5px; 
+        padding: 15px; /* Plus de padding interne */
+        min-height: 80px; /* Hauteur minimale augmentée */
+        margin-bottom: 25px; /* Grosse marge en bas pour séparer de "Améliorations" */
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    #boost-area h3 {
+        font-size: 1.1em;
+        color: var(--prestige-color); /* Couleur distincte pour le titre Recherche */
+        margin-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 193, 7, 0.2);
+        padding-bottom: 5px;
+    }
+    #boost-container { 
+        display: flex; 
+        flex-wrap: wrap; 
+        gap: 8px; /* Espace augmenté entre les icônes */
+    }
+    .boost-item { 
+        width: 45px; 
+        height: 45px; 
+        background: #30363d; 
+        border: 2px solid var(--title-color); 
+        border-radius: 50%; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        font-size: 1.5em; 
+        cursor: pointer; 
+        transition: transform 0.2s; 
+        flex-shrink: 0; /* Empêche l'écrasement */
+    }
     .boost-item:hover { transform: scale(1.1); border-color: var(--viral-green); } .boost-item.error-anim { animation: shakeRed 0.3s; }
 
-    #prestige-area { display: none; background: #21262d; border: 1px solid var(--prestige-color); border-radius: 5px; padding: 10px; text-align: center; }
+    #prestige-area { display: none; background: #21262d; border: 1px solid var(--prestige-color); border-radius: 5px; padding: 10px; text-align: center; margin-bottom: 15px; }
     #prestige-area h3 { color: var(--prestige-color); border: none; padding: 0; }
     .prestige-btn { background: var(--prestige-color); color: #000; border: none; padding: 8px; width: 100%; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 5px; font-family: inherit; }
     .prestige-btn:hover { background: #ffd54f; } .prestige-btn.secondary { background: var(--title-color); color: white; }
@@ -179,6 +209,7 @@
     #chat-input { flex-grow: 1; background: transparent; border: none; padding: 8px; color: #fff; font-family: inherit; outline: none; }
     #chat-btn { background: var(--panel-bg); border: none; border-left: 1px solid var(--border-color); color: var(--title-color); padding: 0 10px; cursor: pointer; font-family: inherit; transition: opacity 0.2s; }
     #chat-btn:hover { background: #30363d; }
+    #chat-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
     #leaderboard-panel { position: absolute; top: 80px; left: 20px; width: 200px; background: rgba(13, 17, 23, 0.8); border: 1px solid var(--border-color); border-radius: 5px; padding: 10px; z-index: 50; pointer-events: none; }
     #leaderboard-panel h3 { font-size: 1em; color: var(--title-color); margin-bottom: 5px; text-align: center; }
@@ -191,7 +222,9 @@
   <div id="login-overlay">
     <div id="login-box"><h2>IDENTIFICATION REQUISE</h2><p style="color: #8b949e; margin-bottom: 20px;">Accès au Laboratoire</p><form id="login-form"><input type="text" id="login-input" placeholder="Votre Nom de Code" maxlength="15" autocomplete="off"><br><button type="submit" id="login-btn">ACCÉDER</button></form></div>
   </div>
-  <div id="background-cells"><div class="bg-cell" style="width:300px; height:300px; top:10%; left:10%;"></div><div class="bg-cell" style="width:500px; height:500px; top:50%; left:60%;"></div></div>
+  
+  <canvas id="bio-canvas"></canvas>
+
   <div id="passive-particle-container"></div>
   <div class="container">
     <div id="game-area">
@@ -206,25 +239,43 @@
       <div id="prestige-area"><h3>Recherche Avancée</h3><p>+<span id="p-gain">0</span> PR au reset</p><p>Total: <span id="p-total">0</span> PR</p><button class="prestige-btn secondary" id="btn-meta">Méta-Recherche (🧠)</button><button class="prestige-btn" id="btn-reset">Lancer la Mutation Globale</button></div>
       <div id="boost-area"><h3>Recherche</h3><div id="boost-container"></div></div>
       <h2>Améliorations</h2>
-      <div class="store-item" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Ajustements d'ADN.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-oiseau"><div class="item-info"><h3>Vecteur Oiseau</h3><p class="item-desc">Grippe 2.0.</p><p class="item-gain">+1 CI/s</p></div><div class="item-stats"><span class="item-cost">100</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-eau"><div class="item-info"><h3>Contamination Eau</h3><p class="item-desc">Eau trouble.</p><p class="item-gain">+8 CI/s</p></div><div class="item-stats"><span class="item-cost">1100</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-aerosol"><div class="item-info"><h3>Transmission Aérosol</h3><p class="item-desc">Dans l'air.</p><p class="item-gain">+47 CI/s</p></div><div class="item-stats"><span class="item-cost">12000</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-aeroport"><div class="item-info"><h3>Aéroport International</h3><p class="item-desc">Vols infectés.</p><p class="item-gain">+260 CI/s</p></div><div class="item-stats"><span class="item-cost">130000</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-ferme"><div class="item-info"><h3>Fermes Virales</h3><p class="item-desc">Culture intensive.</p><p class="item-gain">+2k CI/s</p></div><div class="item-stats"><span class="item-cost">500000</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-centre"><div class="item-info"><h3>Centres de Contagion</h3><p class="item-desc">Villes denses.</p><p class="item-gain">+15k CI/s</p></div><div class="item-stats"><span class="item-cost">5M</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-propagande"><div class="item-info"><h3>Propagande Virale</h3><p class="item-desc">Fake news.</p><p class="item-gain">+100k CI/s</p></div><div class="item-stats"><span class="item-cost">50M</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-satellite"><div class="item-info"><h3>Satellite de Dispersion</h3><p class="item-desc">5G Virale.</p><p class="item-gain">+1.2M CI/s</p></div><div class="item-stats"><span class="item-cost">600M</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-clonage"><div class="item-info"><h3>Clonage Humain</h3><p class="item-desc">Copier/Coller.</p><p class="item-gain">+20M CI/s</p></div><div class="item-stats"><span class="item-cost">7.5Md</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-terraformation"><div class="item-info"><h3>Terraformation Virale</h3><p class="item-desc">Planète morte.</p><p class="item-gain">+350M CI/s</p></div><div class="item-stats"><span class="item-cost">95Md</span><span class="item-count">0</span></div></div>
-      <div class="store-item" id="b-singularite"><div class="item-info"><h3>Singularité Biologique</h3><p class="item-desc">La Fin.</p><p class="item-gain">+8Md CI/s</p></div><div class="item-stats"><span class="item-cost">1.5Tn</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Tiens ? Un troisième bras a poussé.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-oiseau"><div class="item-info"><h3>Vecteur Oiseau</h3><p class="item-desc">Roucoule, tousse, propage, répète.</p><p class="item-gain">+1 CI/s</p></div><div class="item-stats"><span class="item-cost">100</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-eau"><div class="item-info"><h3>Contamination Eau</h3><p class="item-desc">Enrichie en minéraux et en pathogènes.</p><p class="item-gain">+8 CI/s</p></div><div class="item-stats"><span class="item-cost">1100</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-aerosol"><div class="item-info"><h3>Transmission Aérosol</h3><p class="item-desc">L'amour est dans l'air. La mort aussi.</p><p class="item-gain">+47 CI/s</p></div><div class="item-stats"><span class="item-cost">12000</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-aeroport"><div class="item-info"><h3>Aéroport International</h3><p class="item-desc">Tour du monde en 80 fièvres.</p><p class="item-gain">+260 CI/s</p></div><div class="item-stats"><span class="item-cost">130000</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-ferme"><div class="item-info"><h3>Fermes Virales</h3><p class="item-desc">Élevé en plein air, mort en plein air.</p><p class="item-gain">+2k CI/s</p></div><div class="item-stats"><span class="item-cost">500000</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-centre"><div class="item-info"><h3>Centres de Contagion</h3><p class="item-desc">La promiscuité, c'est l'avenir de l'espèce.</p><p class="item-gain">+15k CI/s</p></div><div class="item-stats"><span class="item-cost">5M</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-propagande"><div class="item-info"><h3>Propagande Virale</h3><p class="item-desc">"Ne paniquez pas, c'est juste une allergie."</p><p class="item-gain">+100k CI/s</p></div><div class="item-stats"><span class="item-cost">50M</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-satellite"><div class="item-info"><h3>Satellite de Dispersion</h3><p class="item-desc">Prévisions météo : averses de spores.</p><p class="item-gain">+1.2M CI/s</p></div><div class="item-stats"><span class="item-cost">600M</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-clonage"><div class="item-info"><h3>Clonage Humain</h3><p class="item-desc">On ne manque plus de volontaires pour les tests.</p><p class="item-gain">+20M CI/s</p></div><div class="item-stats"><span class="item-cost">7.5Md</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-terraformation"><div class="item-info"><h3>Terraformation Virale</h3><p class="item-desc">Une planète verte... de pus et de nécrose.</p><p class="item-gain">+350M CI/s</p></div><div class="item-stats"><span class="item-cost">95Md</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-singularite"><div class="item-info"><h3>Singularité Biologique</h3><p class="item-desc">Toute la biomasse fusionnée en une seule entité.</p><p class="item-gain">+8Md CI/s</p></div><div class="item-stats"><span class="item-cost">1.5Tn</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-echo"><div class="item-info"><h3>Échos Dimensionnels</h3><p class="item-desc">La membrane de la réalité commence à tousser.</p><p class="item-gain">+50Md CI/s</p></div><div class="item-stats"><span class="item-cost">10Tn</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-nano"><div class="item-info"><h3>Nanobots</h3><p class="item-desc">Des virus synthétiques qui n'arrêtent jamais.</p><p class="item-gain">+1.5Tn CI/s</p></div><div class="item-stats"><span class="item-cost">250Tn</span><span class="item-count">0</span></div></div>
+      
+      <div class="store-item" id="b-nova"><div class="item-info"><h3>Supernova Virale</h3><p class="item-desc">L'univers entier est notre boîte de Petri.</p><p class="item-gain">+100Qa CI/s</p></div><div class="item-stats"><span class="item-cost">8Qa</span><span class="item-count">0</span></div></div>
+
     </div>
   </div>
   <div id="tooltip"></div><div id="modal-backdrop"><div id="modal"><div id="modal-header"><h2>Méta-Recherche</h2><p>Améliorations permanentes</p></div><div id="modal-body"></div></div></div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // GENERATION DU DEVICE ID
     let deviceId = localStorage.getItem('viral_device_id');
     if (!deviceId) {
       deviceId = 'id_' + Math.random().toString(36).substr(2, 9) + Date.now();
@@ -248,54 +299,90 @@
       if (num < 1000000) return parseFloat((num / 1000).toFixed(2)) + 'k'; 
       if (num < 1000000000) return parseFloat((num / 1000000).toFixed(2)) + 'M'; 
       if (num < 1000000000000) return parseFloat((num / 1000000000).toFixed(2)) + 'Md'; 
-      if (num < 1000000000000000) return parseFloat((num / 1000000000000).toFixed(2)) + 'T'; 
-      return parseFloat((num / 1000000000000000).toFixed(2)) + 'Qa'; 
+      if (num < 1000000000000000) return parseFloat((num / 1000000000000).toFixed(2)) + 'Tn'; 
+      if (num < 1000000000000000000) return parseFloat((num / 1000000000000000).toFixed(2)) + 'Qa'; 
+      return parseFloat((num / 1000000000000000000).toFixed(2)) + 'Qi'; 
     }
 
     const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
     loginForm.onsubmit = (e) => { e.preventDefault(); const name = loginInput.value.trim(); if(name.length > 0) { if(audioCtx.state === 'suspended') audioCtx.resume(); socket.emit('set_username', name); currentUsernameDisplay.innerText = name; loginOverlay.style.display = 'none'; } else { loginInput.style.borderColor = "var(--error-color)"; setTimeout(() => loginInput.style.borderColor = "var(--border-color)", 300); } };
     
+    // --- SYSTÈME DE CHAT HTTP ---
     const chatForm = document.getElementById('chat-form'); 
     const chatInput = document.getElementById('chat-input'); 
     const chatMsg = document.getElementById('chat-messages');
     const chatBtn = document.getElementById('chat-btn');
+    
+    let lastChatTimestamp = 0;
+    let isPolling = false; 
 
     chatForm.onsubmit = (e) => { 
       e.preventDefault(); 
-      const txt = chatInput.value; 
-      if(txt.trim() && !chatBtn.disabled) { 
-        socket.emit('chat_message', txt); 
-        chatInput.value = ''; 
+      const txt = chatInput.value.trim(); 
+      const username = currentUsernameDisplay.innerText;
+
+      if(txt && !chatBtn.disabled) { 
         chatBtn.disabled = true;
         chatBtn.style.opacity = '0.5';
         chatBtn.style.cursor = 'not-allowed';
-        setTimeout(() => {
-          chatBtn.disabled = false;
-          chatBtn.style.opacity = '1';
-          chatBtn.style.cursor = 'pointer';
-        }, 2000); 
+
+        fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user: username, text: txt })
+        })
+        .then(res => res.json())
+        .then(data => {
+          if(data.error) {
+             addMessageToChat('Système', `⛔ ${data.error}`, 'msg-system');
+             setTimeout(() => { chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer'; }, 500);
+          } else {
+            chatInput.value = ''; 
+            Sound.chat(); 
+            pollChat(); 
+            setTimeout(() => { chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer'; chatInput.focus(); }, 3000);
+          }
+        })
+        .catch(err => {
+            console.error("Erreur chat", err);
+            chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer';
+        });
       } 
     };
 
-    socket.on('chat_message', (d) => { 
+    function pollChat() {
+      if (isPolling) return; 
+      isPolling = true;
+
+      fetch(`/api/chat?since=${lastChatTimestamp}`)
+        .then(res => res.json())
+        .then(messages => {
+          if (messages.length > 0) {
+            messages.forEach(msg => {
+              addMessageToChat(msg.user, msg.text, msg.user === 'Système' ? 'msg-system' : null, msg.id);
+              if(msg.timestamp > lastChatTimestamp) lastChatTimestamp = msg.timestamp;
+            });
+            const myName = currentUsernameDisplay.innerText;
+            const lastMsg = messages[messages.length-1];
+            if(lastMsg.user !== myName && lastMsg.user !== 'Système') { Sound.chat(); }
+          }
+        })
+        .catch(err => console.error("Polling chat error", err))
+        .finally(() => { isPolling = false; });
+    }
+    
+    function addMessageToChat(user, text, specificClass, msgId) {
+      if (msgId && document.getElementById('msg-' + msgId)) return; 
       const div = document.createElement('div'); 
       div.className = 'msg'; 
-      div.innerHTML = `<span class="msg-user"></span>: <span class="msg-text"></span>`; 
-      div.querySelector('.msg-user').innerText = d.user; 
-      div.querySelector('.msg-text').innerText = d.text; 
+      if (msgId) div.id = 'msg-' + msgId;
+      let userClass = specificClass || 'msg-user';
+      div.innerHTML = `<span class="${userClass}">${user}:</span> <span class="msg-text">${text}</span>`; 
       chatMsg.appendChild(div); 
       chatMsg.scrollTop = chatMsg.scrollHeight; 
-      Sound.chat(); 
-    });
-
-    socket.on('chat_error', (msg) => {
-      const div = document.createElement('div'); 
-      div.className = 'msg'; 
-      div.innerHTML = `<span class="msg-system">⛔ Système: ${msg}</span>`; 
-      chatMsg.appendChild(div); 
-      chatMsg.scrollTop = chatMsg.scrollHeight; 
-    });
-
+    }
+    setInterval(pollChat, 2000);
+    
     socket.on('spawn_bonus', (data) => {
       const bonus = document.createElement('div');
       bonus.className = 'bonus-mutation';
@@ -316,10 +403,17 @@
       setTimeout(() => { if(bonus.parentNode) bonus.remove(); }, 10000);
     });
 
-    const builds = { 'mutation_mineure': 'b-mutation', 'vecteur_oiseau': 'b-oiseau', 'contamination_eau': 'b-eau', 'transmission_aerosol': 'b-aerosol', 'aeroport_international': 'b-aeroport', 'fermes_virales': 'b-ferme', 'centres_contagion': 'b-centre', 'propagande_virale': 'b-propagande', 'satellite_dispersion': 'b-satellite', 'clonage_humain': 'b-clonage', 'terraformation_virale': 'b-terraformation', 'singularite_biologique': 'b-singularite' };
+    const builds = { 
+        'mutation_mineure': 'b-mutation', 'vecteur_oiseau': 'b-oiseau', 'contamination_eau': 'b-eau', 
+        'transmission_aerosol': 'b-aerosol', 'aeroport_international': 'b-aeroport', 'fermes_virales': 'b-ferme', 
+        'centres_contagion': 'b-centre', 'propagande_virale': 'b-propagande', 'satellite_dispersion': 'b-satellite', 
+        'clonage_humain': 'b-clonage', 'terraformation_virale': 'b-terraformation', 'singularite_biologique': 'b-singularite',
+        'echos_dimensionnels': 'b-echo', 'nanobots_autoreplicants': 'b-nano', 'supernova_virale': 'b-nova'
+    };
+
     function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost" style="color:var(--viral-green)">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
-    for(let k in builds) { const el = document.getElementById(builds[k]); el.onclick = () => { if(!lastState) return; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); if(currentScore >= cost) { socket.emit('buy_upgrade', k); el.classList.add('purchased-anim'); setTimeout(()=>el.classList.remove('purchased-anim'),300); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; }
+    for(let k in builds) { const el = document.getElementById(builds[k]); el.onclick = () => { if(!lastState) return; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); if(currentScore >= cost) { socket.emit('buy_upgrade', k); el.classList.add('purchased-anim'); setTimeout(()=>el.classList.remove('purchased-anim'),300); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; if(k.startsWith('echos')) costKey = 'cost_echo'; if(k.startsWith('nanobots')) costKey = 'cost_nano'; if(k.startsWith('supernova')) costKey = 'cost_nova'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; }
     
     cellBtn.onclick = (e) => { 
       if (!e.isTrusted) return; 
@@ -352,10 +446,10 @@
       currentClickValue = d.clickValue; 
       lastUpdate = Date.now(); 
       
-      // DYNAMISME VISUEL : Changement de couleur basé sur le score total
       const logScore = Math.log10(lastState.totalCellsEver + 1);
       const hue = (logScore * 10) % 360; 
-      document.body.style.filter = `hue-rotate(${hue}deg)`;
+      // Apply filter to container, not body, to keep canvas neutral
+      document.querySelector('.container').style.filter = `hue-rotate(${hue}deg)`;
 
       document.getElementById('player-count').innerText = 'Scientifiques: ' + d.players; 
       document.getElementById('cps-display').innerText = '+' + formatNumber(d.cps) + ' CI/s'; 
@@ -374,7 +468,14 @@
       cellBtn.style.filter = `hue-rotate(${hue_cell}deg)`; 
     });
 
-    socket.on('full_update', (d) => { lastState = d.gameState; lastUpdate = Date.now(); prestigeUpgradesList = d.prestigeUpgrades; const s = lastState; const update = (key, cKey, gKey, cntKey) => { const el = document.getElementById(builds[key]); if(el) { const cost = s[cKey]; const gain = s[gKey]; const count = s[cntKey]; el.querySelector('.item-cost').innerText = formatNumber(cost); el.querySelector('.item-cost').dataset.raw = cost; el.querySelector('.item-count').innerText = count; el.querySelector('.item-gain').innerText = `+${formatNumber(gain)} CI/s`; el.querySelector('.item-gain').dataset.raw = gain; } }; update('mutation_mineure', 'cost_mutation', 'gain_mutation', 'mutations_mineures'); update('vecteur_oiseau', 'cost_oiseau', 'gain_oiseau', 'vecteurs_oiseaux'); update('contamination_eau', 'cost_eau', 'gain_eau', 'contamination_eau'); update('transmission_aerosol', 'cost_aerosol', 'gain_aerosol', 'transmission_aerosol'); update('aeroport_international', 'cost_aeroport', 'gain_aeroport', 'aeroport_international'); update('fermes_virales', 'cost_ferme', 'gain_ferme', 'fermes_virales'); update('centres_contagion', 'cost_centre', 'gain_centre', 'centres_contagion'); update('propagande_virale', 'cost_propagande', 'gain_propagande', 'propagande_virale'); update('satellite_dispersion', 'cost_satellite', 'gain_satellite', 'satellite_dispersion'); update('clonage_humain', 'cost_clonage', 'gain_clonage', 'clonage_humain'); update('terraformation_virale', 'cost_terraformation', 'gain_terraformation', 'terraformation_virale'); update('singularite_biologique', 'cost_singularite', 'gain_singularite', 'singularite_biologique'); const boostCont = document.getElementById('boost-container'); boostCont.innerHTML = ''; for(const b of d.availableBoosts) { const el = document.createElement('div'); el.className = 'boost-item'; let ico = '❓'; if(b.id.includes('seringue') || b.id.includes('gants')) ico='🧤'; else if(b.id.includes('doigts')) ico='🦾'; else if(b.id.includes('rage')) ico='🩸'; else if(b.id.includes('osmose')) ico='⚡'; else if(b.id.includes('neurones')) ico='🧠'; else if(b.id.includes('clics')) ico='🖱️'; else if(b.id.includes('mutation')) ico='🧬'; else if(b.id.includes('plumes')||b.id.includes('oiseau')) ico='🪶'; else if(b.id.includes('filtres')||b.id.includes('eau')) ico='💧'; else if(b.id.includes('spores')||b.id.includes('aerosol')) ico='💨'; else if(b.id.includes('partenariats')||b.id.includes('aeroport')) ico='✈️'; else if(b.id.includes('nutriments')||b.id.includes('ferme')) ico='🌿'; else if(b.id.includes('gentrification')||b.id.includes('centre')) ico='🏙️'; else if(b.id.includes('fake')||b.id.includes('propagande')) ico='📰'; else if(b.id.includes('sat')) ico='📡'; else if(b.id.includes('clone')) ico='👯'; else if(b.id.includes('terra')) ico='🌍'; else if(b.id.includes('singu')) ico='🌌'; else if(b.id.includes('matrice')) ico='💠'; else if(b.id.includes('synergie')) ico='🔗'; else if(b.id.includes('contamination')) ico='☣️'; el.innerText = ico; el.onclick = () => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; if(currentScore >= cost) { socket.emit('buy_boost', b.id); el.remove(); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; showTip(e, b.name, cost, b.description); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; el.dataset.cost = cost; boostCont.appendChild(el); } const pInfo = d.prestigeInfo; const pArea = document.getElementById('prestige-area'); if(pInfo.canPrestige || s.prestigePoints > 0) { pArea.style.display = 'block'; document.getElementById('p-gain').innerText = formatNumber(pInfo.pointsOnReset); document.getElementById('p-total').innerText = formatNumber(s.prestigePoints); } else { pArea.style.display = 'none'; } renderPrestigeShop(); });
+    socket.on('full_update', (d) => { lastState = d.gameState; lastUpdate = Date.now(); prestigeUpgradesList = d.prestigeUpgrades; const s = lastState; const update = (key, cKey, gKey, cntKey) => { const el = document.getElementById(builds[key]); if(el) { const cost = s[cKey]; const gain = s[gKey]; const count = s[cntKey]; el.querySelector('.item-cost').innerText = formatNumber(cost); el.querySelector('.item-cost').dataset.raw = cost; el.querySelector('.item-count').innerText = count; el.querySelector('.item-gain').innerText = `+${formatNumber(gain)} CI/s`; el.querySelector('.item-gain').dataset.raw = gain; } }; 
+    update('mutation_mineure', 'cost_mutation', 'gain_mutation', 'mutations_mineures'); update('vecteur_oiseau', 'cost_oiseau', 'gain_oiseau', 'vecteurs_oiseaux'); update('contamination_eau', 'cost_eau', 'gain_eau', 'contamination_eau'); update('transmission_aerosol', 'cost_aerosol', 'gain_aerosol', 'transmission_aerosol'); update('aeroport_international', 'cost_aeroport', 'gain_aeroport', 'aeroport_international'); update('fermes_virales', 'cost_ferme', 'gain_ferme', 'fermes_virales'); update('centres_contagion', 'cost_centre', 'gain_centre', 'centres_contagion'); update('propagande_virale', 'cost_propagande', 'gain_propagande', 'propagande_virale'); update('satellite_dispersion', 'cost_satellite', 'gain_satellite', 'satellite_dispersion'); update('clonage_humain', 'cost_clonage', 'gain_clonage', 'clonage_humain'); update('terraformation_virale', 'cost_terraformation', 'gain_terraformation', 'terraformation_virale'); update('singularite_biologique', 'cost_singularite', 'gain_singularite', 'singularite_biologique'); 
+    update('echos_dimensionnels', 'cost_echo', 'gain_echo', 'echos_dimensionnels'); update('nanobots_autoreplicants', 'cost_nano', 'gain_nano', 'nanobots_autoreplicants'); update('supernova_virale', 'cost_nova', 'gain_nova', 'supernova_virale');
+
+    const boostCont = document.getElementById('boost-container'); boostCont.innerHTML = ''; for(const b of d.availableBoosts) { const el = document.createElement('div'); el.className = 'boost-item'; let ico = '❓'; if(b.id.includes('seringue') || b.id.includes('gants')) ico='🧤'; else if(b.id.includes('doigts')) ico='🦾'; else if(b.id.includes('rage')) ico='🩸'; else if(b.id.includes('osmose')) ico='⚡'; else if(b.id.includes('neurones')) ico='🧠'; else if(b.id.includes('clics')) ico='🖱️'; else if(b.id.includes('mutation')) ico='🧬'; else if(b.id.includes('plumes')||b.id.includes('oiseau')) ico='🪶'; else if(b.id.includes('filtres')||b.id.includes('eau')) ico='💧'; else if(b.id.includes('spores')||b.id.includes('aerosol')) ico='💨'; else if(b.id.includes('partenariats')||b.id.includes('aeroport')) ico='✈️'; else if(b.id.includes('nutriments')||b.id.includes('ferme')) ico='🌿'; else if(b.id.includes('gentrification')||b.id.includes('centre')) ico='🏙️'; else if(b.id.includes('fake')||b.id.includes('propagande')) ico='📰'; else if(b.id.includes('sat')) ico='📡'; else if(b.id.includes('clone')) ico='👯'; else if(b.id.includes('terra')) ico='🌍'; else if(b.id.includes('singu')) ico='🌌'; else if(b.id.includes('matrice')) ico='💠'; else if(b.id.includes('synergie')) ico='🔗'; else if(b.id.includes('contamination')) ico='☣️'; 
+    else if(b.id.includes('echo')) ico='🌌'; else if(b.id.includes('nano')) ico='🤖'; else if(b.id.includes('nova')) ico='💥'; else if(b.id.includes('omnipotence')) ico='👑'; else if(b.id.includes('doigt')) ico='👆';
+
+    el.innerText = ico; el.onclick = () => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; if(currentScore >= cost) { socket.emit('buy_boost', b.id); el.remove(); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; showTip(e, b.name, cost, b.description); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; el.dataset.cost = cost; boostCont.appendChild(el); } const pInfo = d.prestigeInfo; const pArea = document.getElementById('prestige-area'); if(pInfo.canPrestige || s.prestigePoints > 0) { pArea.style.display = 'block'; document.getElementById('p-gain').innerText = formatNumber(pInfo.pointsOnReset); document.getElementById('p-total').innerText = formatNumber(s.prestigePoints); } else { pArea.style.display = 'none'; } renderPrestigeShop(); });
     function renderPrestigeShop() { if(!lastState) return; const body = document.getElementById('modal-body'); body.innerHTML = ''; for(const id in prestigeUpgradesList) { const u = prestigeUpgradesList[id]; const row = document.createElement('div'); row.className = 'p-upgrade'; row.innerHTML = `<div><h4>${u.name}</h4><div class="description">${u.description}</div></div><div class="cost">${u.cost} PR</div>`; const isBought = lastState.purchasedPrestigeUpgrades.includes(id); const canBuy = lastState.prestigePoints >= u.cost; if(isBought) row.classList.add('purchased'); else if(!canBuy) row.classList.add('disabled'); row.onclick = () => { if(!isBought && canBuy) { socket.emit('buy_prestige_upgrade', id); row.classList.add('purchased'); Sound.buy(); } else if (!isBought) { row.classList.add('error-anim'); setTimeout(()=>row.classList.remove('error-anim'),300); } }; body.appendChild(row); } }
     function spawnParticle(src, n) { const rect = src.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const area = document.getElementById('game-area').getBoundingClientRect(); for(let i=0; i<n; i++) { const p = document.createElement('div'); p.className = 'particle'; const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px'; p.style.left = (rect.left - area.left + rect.width/2)+'px'; p.style.top = (rect.top - area.top + rect.height/2)+'px'; const tx = (dest.left - rect.left) + (Math.random()-0.5)*50; const ty = (dest.top - rect.top) + (Math.random()-0.5)*50; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); partCont.appendChild(p); setTimeout(()=>p.remove(), 1000); } }
     function spawnPassive() { const rect = storeEl.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const p = document.createElement('div'); p.className='passive-particle'; const s = Math.random()*3+2; p.style.width=s+'px'; p.style.height=s+'px'; const startY = Math.random() * window.innerHeight; p.style.left = rect.left+'px'; p.style.top = startY+'px'; const tx = dest.left - rect.left + 50; const ty = (dest.top + 20) - startY; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); passPartCont.appendChild(p); setTimeout(()=>p.remove(), 2000); }
@@ -388,9 +489,88 @@
       
       const logScore = Math.log10(lastState.totalCellsEver + 1);
       const hue = (logScore * 10) % 360; 
-      document.body.style.filter = `hue-rotate(${hue}deg)`;
+      // Apply filter to container, not body, to keep canvas neutral
+      document.querySelector('.container').style.filter = `hue-rotate(${hue}deg)`;
 
       for(let k in builds) { const el = document.getElementById(builds[k]); if(el) { const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); el.style.opacity = (currentScore >= cost) ? 1 : 0.5; el.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; } } const bItems = document.getElementsByClassName('boost-item'); for(let b of bItems) { const cost = parseFloat(b.dataset.cost); b.style.opacity = (currentScore >= cost) ? 1 : 0.5; b.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; } if(cps > 0) { const chance = Math.log10(cps+1) * 0.05; if(Math.random() < chance) spawnPassive(); } } } catch(e) { console.error("Erreur rendu", e); } requestAnimationFrame(render); } requestAnimationFrame(render);
+
+    // --- SCRIPT DU FOND ANIMÉ (CANVAS) ---
+    (function initBioBackground() {
+      const canvas = document.getElementById('bio-canvas');
+      const ctx = canvas.getContext('2d');
+      let w, h;
+      
+      class BioParticle {
+        constructor() {
+          this.x = Math.random() * w;
+          this.y = Math.random() * h;
+          this.vx = (Math.random() - 0.5) * 0.5;
+          this.vy = (Math.random() - 0.5) * 0.5;
+          this.radius = Math.random() * 15 + 5;
+          this.alpha = Math.random() * 0.1 + 0.05;
+          this.pulseSpeed = Math.random() * 0.02 + 0.005;
+          this.pulse = 0;
+        }
+        update() {
+          this.x += this.vx;
+          this.y += this.vy;
+          this.pulse += this.pulseSpeed;
+          if(this.x < -50) this.x = w+50; if(this.x > w+50) this.x = -50;
+          if(this.y < -50) this.y = h+50; if(this.y > h+50) this.y = -50;
+        }
+        draw() {
+          const r = this.radius + Math.sin(this.pulse) * 2;
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, r, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha})`;
+          ctx.fill();
+          // Nucleus
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI*2);
+          ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha + 0.1})`;
+          ctx.fill();
+        }
+      }
+      
+      const particles = [];
+      const numParticles = 40;
+      
+      function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resize);
+      resize();
+      
+      for(let i=0; i<numParticles; i++) particles.push(new BioParticle());
+      
+      function animate() {
+        ctx.clearRect(0, 0, w, h);
+        
+        // Connections
+        ctx.strokeStyle = 'rgba(63, 185, 80, 0.05)';
+        ctx.lineWidth = 1;
+        for(let i=0; i<particles.length; i++) {
+          const p1 = particles[i];
+          p1.update();
+          p1.draw();
+          for(let j=i+1; j<particles.length; j++) {
+            const p2 = particles[j];
+            const dx = p1.x - p2.x;
+            const dy = p1.y - p2.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if(dist < 150) {
+              ctx.beginPath();
+              ctx.moveTo(p1.x, p1.y);
+              ctx.lineTo(p2.x, p2.y);
+              ctx.stroke();
+            }
+          }
+        }
+        requestAnimationFrame(animate);
+      }
+      animate();
+    })();
   </script>
 </body>
 </html>
