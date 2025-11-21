@@ -5,7 +5,7 @@
   <title>Projet Genèse</title>
   <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
-    :root { --bg-color: #0d1117; --panel-bg: #161b22; --border-color: #30363d; --text-color: #c9d1d9; --title-color: #58a6ff; --viral-green: #3fb950; --viral-glow: rgba(63, 185, 80, 0.5); --prestige-color: #ffc107; --prestige-glow: rgba(255, 193, 7, 0.5); --error-color: #e63946; }
+    :root { --bg-color: #0d1117; --panel-bg: #161b22; --border-color: #30363d; --text-color: #c9d1d9; --title-color: #58a6ff; --viral-green: #3fb950; --viral-glow: rgba(63, 185, 80, 0.5); --prestige-color: #ffc107; --prestige-glow: rgba(255, 193, 7, 0.5); --error-color: #e63946; --hazard-yellow: #ffd700; }
     * { box-sizing: border-box; user-select: none; }
     body { 
       font-family: 'Share Tech Mono', monospace; 
@@ -54,152 +54,135 @@
     #login-btn { padding: 10px 30px; font-family: inherit; font-size: 1.2em; font-weight: bold; background: var(--viral-green); border: none; color: #000; cursor: pointer; border-radius: 5px; }
     #login-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--viral-glow); }
 
-    /* --- ÉCRAN DE CONTEXTE (LORE) --- */
+    /* --- ÉCRAN DE CONTEXTE BIOHAZARD --- */
     #context-overlay {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background-color: #000;
-      z-index: 9000; /* Juste en dessous du login */
-      display: none; /* Masqué par défaut, activé par JS */
-      justify-content: center;
-      align-items: center;
+      /* Effet Vignette + Scanlines */
+      background: radial-gradient(circle, rgba(20,30,20,1) 0%, rgba(0,0,0,1) 90%);
+      z-index: 9000; 
+      display: none; 
+      justify-content: center; align-items: center;
       font-family: 'Share Tech Mono', monospace;
     }
+    /* Scanlines (lignes TV) */
+    #context-overlay::before {
+      content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+      z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
+    }
+
     #context-box {
-      width: 700px;
-      max-width: 90%;
-      background: #0d1117;
-      border: 2px solid var(--viral-green);
+      width: 700px; max-width: 90%;
+      background: rgba(10, 12, 10, 0.95);
+      border-left: 2px solid var(--hazard-yellow);
+      border-right: 2px solid var(--hazard-yellow);
       padding: 40px;
-      box-shadow: 0 0 30px rgba(63, 185, 80, 0.2);
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.15), inset 0 0 50px rgba(0,0,0,0.8);
       position: relative;
+      z-index: 3;
+      overflow: hidden;
     }
+    
+    /* Bandes de danger Jaune/Noir en haut et en bas */
+    #context-box::before, #context-box::after {
+      content: ''; position: absolute; left: 0; width: 100%; height: 15px;
+      background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 15px, #000 15px, #000 30px);
+      box-shadow: 0 0 10px #000;
+    }
+    #context-box::before { top: 0; }
+    #context-box::after { bottom: 0; }
+
     #context-box h2 {
-      color: var(--viral-green);
-      font-size: 1.4em;
-      margin-bottom: 20px;
-      border-bottom: 1px dashed #30363d;
-      padding-bottom: 10px;
-      text-align: left;
-      border-left: none;
-      padding-left: 0;
+      color: var(--hazard-yellow);
+      font-size: 1.5em; margin-bottom: 20px; margin-top: 10px;
+      border-bottom: 1px dashed var(--hazard-yellow);
+      padding-bottom: 10px; text-align: left; border-left: none; padding-left: 0;
+      text-shadow: 0 0 8px rgba(255, 215, 0, 0.6);
     }
+    
     #context-text {
-      color: #c9d1d9;
-      font-size: 1.1em;
-      line-height: 1.6;
-      min-height: 150px;
-      white-space: pre-wrap;
+      color: #aaffaa; /* Vert un peu plus "malade" */
+      font-size: 1.1em; line-height: 1.6;
+      min-height: 150px; white-space: pre-wrap;
+      text-shadow: 0 0 2px var(--viral-green);
     }
+    
     #start-mission-btn {
-      margin-top: 30px;
-      padding: 15px 30px;
-      font-size: 1.2em;
-      font-weight: bold;
+      margin-top: 30px; padding: 15px 30px;
+      font-size: 1.2em; font-weight: bold;
       background: transparent;
-      border: 2px solid var(--viral-green);
-      color: var(--viral-green);
-      cursor: pointer;
-      width: 100%;
-      font-family: inherit;
-      transition: all 0.2s;
-      display: none; /* Masqué tant que le texte n'est pas fini */
+      border: 2px solid var(--hazard-yellow);
+      color: var(--hazard-yellow);
+      cursor: pointer; width: 100%; font-family: inherit;
+      transition: all 0.2s; display: none;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
     #start-mission-btn:hover {
-      background: var(--viral-green);
-      color: #000;
-      box-shadow: 0 0 20px var(--viral-glow);
+      background: var(--hazard-yellow); color: #000;
+      box-shadow: 0 0 25px var(--hazard-yellow);
     }
-    .blink-cursor::after {
-      content: '█';
-      animation: blink 1s infinite;
-      margin-left: 5px;
-    }
+    .blink-cursor::after { content: '█'; animation: blink 1s infinite; margin-left: 5px; color: var(--hazard-yellow); }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+    /* SIGNATURE */
+    #signature {
+      position: absolute; bottom: 10px; right: 15px;
+      font-size: 0.8em; color: var(--title-color); opacity: 0.4;
+      font-weight: bold; letter-spacing: 1px; pointer-events: none; z-index: 10;
+      text-shadow: 0 0 5px rgba(0,0,0,0.5);
+    }
 
     /* CANVAS D'ARRIÈRE PLAN */
     #bio-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 0;
-      pointer-events: none;
-      opacity: 0.4; 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 0; pointer-events: none; opacity: 0.4; 
     }
 
     .score-panel { 
-      background-color: var(--panel-bg); 
-      border: 1px solid var(--border-color); 
-      padding: 15px 40px; 
-      border-radius: 8px; 
+      background-color: var(--panel-bg); border: 1px solid var(--border-color); 
+      padding: 15px 40px; border-radius: 8px; 
       box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 8px rgba(255, 255, 255, 0.05); 
-      margin-top: 0; 
-      margin-bottom: 0; 
-      text-align: center; 
+      margin-top: 0; margin-bottom: 0; text-align: center; 
     }
     #scoreDisplay { 
-      font-size: 3.5em; 
-      color: var(--viral-green); 
+      font-size: 3.5em; color: var(--viral-green); 
       text-shadow: 0 0 10px var(--viral-glow), 0 0 20px rgba(63, 185, 80, 0.8);
-      font-variant-numeric: tabular-nums; 
-      transition: transform 0.1s; 
-      display: block; 
+      font-variant-numeric: tabular-nums; transition: transform 0.1s; display: block; 
     }
     #scoreDisplay.pop { transform: scale(1.1); color: #fff; }
     .score-label { font-size: 1.2em; margin-top: 5px; color: #8b949e; }
     #cps-display { color: var(--viral-green); font-size: 1.5em; margin-top: 10px; font-weight: bold; font-variant-numeric: tabular-nums; }
     
     #player-count { 
-      position: absolute; 
-      top: 15px; 
-      right: 20px; 
-      font-size: 1.2em; 
-      color: var(--viral-green); 
-      font-weight: bold; 
-      text-shadow: 0 0 8px var(--viral-glow);
+      position: absolute; top: 15px; right: 20px; 
+      font-size: 1.2em; color: var(--viral-green); 
+      font-weight: bold; text-shadow: 0 0 8px var(--viral-glow);
     }
 
     #cell-button { 
-      width: 220px; 
-      height: 220px; 
+      width: 220px; height: 220px; 
       background: radial-gradient(circle, #2a5a2f 0%, var(--viral-green) 10%, #1e3f20 70%); 
-      border-radius: 50%; 
-      border: 4px solid var(--viral-green); 
+      border-radius: 50%; border: 4px solid var(--viral-green); 
       box-shadow: 0 0 40px var(--viral-glow), 0 0 15px var(--viral-green), inset 0 0 20px #1e3f20; 
-      cursor: pointer; 
-      transition: transform 0.05s, filter 0.2s; 
-      position: relative; 
-      z-index: 25; 
-      overflow: hidden;
+      cursor: pointer; transition: transform 0.05s, filter 0.2s; 
+      position: relative; z-index: 25; overflow: hidden;
     }
     #cell-button:active { transform: scale(0.95); }
     #cell-button.clicked { animation: cellClickAnim 0.1s; }
     @keyframes cellClickAnim { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
     
     .ripple {
-      position: absolute;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.7);
-      transform: scale(0);
-      animation: rippleAnim 0.6s linear;
-      pointer-events: none;
+      position: absolute; border-radius: 50%; background: rgba(255, 255, 255, 0.7);
+      transform: scale(0); animation: rippleAnim 0.6s linear; pointer-events: none;
     }
-    @keyframes rippleAnim {
-      to { transform: scale(2.5); opacity: 0; }
-    }
+    @keyframes rippleAnim { to { transform: scale(2.5); opacity: 0; } }
 
     #click-info { 
-      margin-top: 15px; 
-      color: var(--viral-green); 
-      font-size: 1.4em; 
-      text-align: center; 
-      font-weight: bold;
-      font-variant-numeric: tabular-nums; 
-      text-shadow: 0 0 8px var(--viral-glow); 
-      flex-shrink: 0;
+      margin-top: 15px; color: var(--viral-green); font-size: 1.4em; 
+      text-align: center; font-weight: bold; font-variant-numeric: tabular-nums; 
+      text-shadow: 0 0 8px var(--viral-glow); flex-shrink: 0;
     }
 
     .float-text { position: absolute; color: #fff; font-weight: bold; font-size: 1.4em; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 5px #000; z-index: 1000; }
@@ -212,14 +195,9 @@
     @keyframes passiveFly { 0% { opacity: 0.6; } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
 
     .buy-particle {
-      position: absolute;
-      width: 8px; 
-      height: 8px;
-      background: var(--prestige-color); 
-      box-shadow: 0 0 6px var(--prestige-glow);
-      border-radius: 50%;
-      pointer-events: none;
-      z-index: 9999;
+      position: absolute; width: 8px; height: 8px;
+      background: var(--prestige-color); box-shadow: 0 0 6px var(--prestige-glow);
+      border-radius: 50%; pointer-events: none; z-index: 9999;
       animation: buyExplosion 0.8s ease-out forwards;
     }
     @keyframes buyExplosion {
@@ -234,23 +212,16 @@
     h2 { color: var(--text-color); margin-bottom: 15px; margin-top: 10px; padding-left: 5px; border-left: 3px solid var(--title-color); }
     
     .store-item { 
-        background-color: #21262d; 
-        border: 1px solid var(--border-color); 
-        border-radius: 5px; 
-        padding: 12px; 
-        cursor: pointer; 
-        display: none; 
-        justify-content: space-between; 
-        align-items: center; 
+        background-color: #21262d; border: 1px solid var(--border-color); border-radius: 5px; 
+        padding: 12px; cursor: pointer; display: none; 
+        justify-content: space-between; align-items: center; 
         transition: background 0.2s, border-color 0.2s, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
     }
     .store-item.revealed { display: flex; animation: fadeIn 0.5s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     .store-item:hover { 
-        background-color: #30363d; 
-        border-color: var(--title-color); 
-        transform: translateY(-5px) scale(1.02); 
-        box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+        background-color: #30363d; border-color: var(--title-color); 
+        transform: translateY(-5px) scale(1.02); box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         z-index: 100;
     }
     .store-item.purchased-anim { animation: flashGreen 0.3s; } .store-item.error-anim { animation: shakeRed 0.3s; }
@@ -258,37 +229,19 @@
     .item-stats { text-align: right; min-width: 80px; } .item-cost { display: block; font-size: 1em; color: var(--viral-green); font-weight: bold; } .item-count { display: block; font-size: 1.4em; color: #fff; font-weight: bold; margin-top: 2px; }
 
     #boost-area { 
-        background: #21262d; 
-        border: 1px solid var(--border-color); 
-        border-radius: 5px; 
-        padding: 15px; 
-        min-height: 80px; 
-        margin-bottom: 25px; 
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
+        background: #21262d; border: 1px solid var(--border-color); border-radius: 5px; 
+        padding: 15px; min-height: 80px; margin-bottom: 25px; 
+        display: flex; flex-direction: column; gap: 10px;
     }
     #boost-area h3 {
-        font-size: 1.1em;
-        color: var(--prestige-color); 
-        margin-bottom: 5px;
-        border-bottom: 1px solid rgba(255, 193, 7, 0.2);
-        padding-bottom: 5px;
+        font-size: 1.1em; color: var(--prestige-color); margin-bottom: 5px;
+        border-bottom: 1px solid rgba(255, 193, 7, 0.2); padding-bottom: 5px;
     }
     #boost-container { display: flex; flex-wrap: wrap; gap: 8px; }
     .boost-item { 
-        width: 45px; 
-        height: 45px; 
-        background: #30363d; 
-        border: 2px solid var(--title-color); 
-        border-radius: 50%; 
-        display: flex; 
-        align-items: center; 
-        justify-content: center; 
-        font-size: 1.5em; 
-        cursor: pointer; 
-        transition: transform 0.2s; 
-        flex-shrink: 0; 
+        width: 45px; height: 45px; background: #30363d; border: 2px solid var(--title-color); 
+        border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+        font-size: 1.5em; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; 
     }
     .boost-item:hover { transform: scale(1.1); border-color: var(--viral-green); } .boost-item.error-anim { animation: shakeRed 0.3s; }
 
@@ -332,7 +285,7 @@
 
   <div id="context-overlay">
     <div id="context-box">
-      <h2 class="blink-cursor">>_ TRANSMISSION ENTRANTE...</h2>
+      <h2 class="blink-cursor">☣_ TRANSMISSION SÉCURISÉE</h2>
       <div id="context-text"></div>
       <button id="start-mission-btn">ACCEPTER LE PROTOCOLE</button>
     </div>
@@ -349,6 +302,9 @@
       <div id="cell-button"></div><div id="click-info">Puissance Clic: +1</div> 
       <div id="particle-container"></div>
       <div id="chat-container"><div id="chat-header">Badge: <span id="current-username-display">Anonyme</span></div><div id="chat-messages"><div class="msg"><span class="msg-user">Système:</span> <span class="msg-text">Connexion établie.</span></div></div><form id="chat-form"><input type="text" id="chat-input" placeholder="Débloquez le chat (50 clics)..." autocomplete="off"><button type="submit" id="chat-btn">></button></form></div>
+      
+      <div id="signature">By Swapeur</div>
+      
     </div>
     <div id="store-area">
       <div id="prestige-area"><h3>Recherche Avancée</h3><p>+<span id="p-gain">0</span> PR au reset</p><p>Total: <span id="p-total">0</span> PR</p><button class="prestige-btn secondary" id="btn-meta">Méta-Recherche (🧠)</button><button class="prestige-btn" id="btn-reset">Lancer la Mutation Globale</button></div>
@@ -429,7 +385,7 @@
     const BRIEFING_TEXT = 
 `IDENTIFICATION CONFIRMÉE.
 
-Bienvenue dans le Projet Genèse, Scientifique.
+Bienvenue dans le Projet Genèse, Docteur.
 
 Votre mission est simple : cultiver la souche primitive. 
 Nous ignorons encore ses capacités, mais les premières simulations indiquent un potentiel de croissance exponentiel.
@@ -440,8 +396,6 @@ Concentrez-vous sur la production.
 
 Le monde est prêt pour la prochaine étape de l'évolution.
 À vous de jouer.
-
-Swapeur
 
 TERMINE.`;
 
