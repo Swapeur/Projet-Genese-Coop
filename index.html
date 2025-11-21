@@ -54,6 +54,70 @@
     #login-btn { padding: 10px 30px; font-family: inherit; font-size: 1.2em; font-weight: bold; background: var(--viral-green); border: none; color: #000; cursor: pointer; border-radius: 5px; }
     #login-btn:hover { transform: scale(1.05); box-shadow: 0 0 15px var(--viral-glow); }
 
+    /* --- ÉCRAN DE CONTEXTE (LORE) --- */
+    #context-overlay {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background-color: #000;
+      z-index: 9000; /* Juste en dessous du login */
+      display: none; /* Masqué par défaut, activé par JS */
+      justify-content: center;
+      align-items: center;
+      font-family: 'Share Tech Mono', monospace;
+    }
+    #context-box {
+      width: 700px;
+      max-width: 90%;
+      background: #0d1117;
+      border: 2px solid var(--viral-green);
+      padding: 40px;
+      box-shadow: 0 0 30px rgba(63, 185, 80, 0.2);
+      position: relative;
+    }
+    #context-box h2 {
+      color: var(--viral-green);
+      font-size: 1.4em;
+      margin-bottom: 20px;
+      border-bottom: 1px dashed #30363d;
+      padding-bottom: 10px;
+      text-align: left;
+      border-left: none;
+      padding-left: 0;
+    }
+    #context-text {
+      color: #c9d1d9;
+      font-size: 1.1em;
+      line-height: 1.6;
+      min-height: 150px;
+      white-space: pre-wrap;
+    }
+    #start-mission-btn {
+      margin-top: 30px;
+      padding: 15px 30px;
+      font-size: 1.2em;
+      font-weight: bold;
+      background: transparent;
+      border: 2px solid var(--viral-green);
+      color: var(--viral-green);
+      cursor: pointer;
+      width: 100%;
+      font-family: inherit;
+      transition: all 0.2s;
+      display: none; /* Masqué tant que le texte n'est pas fini */
+    }
+    #start-mission-btn:hover {
+      background: var(--viral-green);
+      color: #000;
+      box-shadow: 0 0 20px var(--viral-glow);
+    }
+    .blink-cursor::after {
+      content: '█';
+      animation: blink 1s infinite;
+      margin-left: 5px;
+    }
+    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
     /* CANVAS D'ARRIÈRE PLAN */
     #bio-canvas {
       position: fixed;
@@ -109,13 +173,12 @@
       transition: transform 0.05s, filter 0.2s; 
       position: relative; 
       z-index: 25; 
-      overflow: hidden; /* Nécessaire pour le Ripple */
+      overflow: hidden;
     }
     #cell-button:active { transform: scale(0.95); }
     #cell-button.clicked { animation: cellClickAnim 0.1s; }
     @keyframes cellClickAnim { 0% { transform: scale(0.95); } 100% { transform: scale(1); } }
     
-    /* --- EFFET RIPPLE --- */
     .ripple {
       position: absolute;
       border-radius: 50%;
@@ -148,7 +211,6 @@
     @keyframes particleFly { 0% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
     @keyframes passiveFly { 0% { opacity: 0.6; } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)); } }
 
-    /* --- PARTICULES D'ACHAT (EXPLOSION) --- */
     .buy-particle {
       position: absolute;
       width: 8px; 
@@ -180,20 +242,14 @@
         display: none; 
         justify-content: space-between; 
         align-items: center; 
-        /* Mise à jour transition pour l'effet lift */
         transition: background 0.2s, border-color 0.2s, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s;
     }
-    .store-item.revealed {
-        display: flex;
-        animation: fadeIn 0.5s;
-    }
+    .store-item.revealed { display: flex; animation: fadeIn 0.5s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* --- EFFET LIFT SURVOL --- */
     .store-item:hover { 
         background-color: #30363d; 
         border-color: var(--title-color); 
-        transform: translateY(-5px) scale(1.02); /* Soulèvement */
+        transform: translateY(-5px) scale(1.02); 
         box-shadow: 0 10px 20px rgba(0,0,0,0.5);
         z-index: 100;
     }
@@ -219,11 +275,7 @@
         border-bottom: 1px solid rgba(255, 193, 7, 0.2);
         padding-bottom: 5px;
     }
-    #boost-container { 
-        display: flex; 
-        flex-wrap: wrap; 
-        gap: 8px; 
-    }
+    #boost-container { display: flex; flex-wrap: wrap; gap: 8px; }
     .boost-item { 
         width: 45px; 
         height: 45px; 
@@ -276,6 +328,14 @@
 <body>
   <div id="login-overlay">
     <div id="login-box"><h2>IDENTIFICATION REQUISE</h2><p style="color: #8b949e; margin-bottom: 20px;">Accès au Laboratoire</p><form id="login-form"><input type="text" id="login-input" placeholder="Votre Nom de Code" maxlength="15" autocomplete="off"><br><button type="submit" id="login-btn">ACCÉDER</button></form></div>
+  </div>
+
+  <div id="context-overlay">
+    <div id="context-box">
+      <h2 class="blink-cursor">>_ TRANSMISSION ENTRANTE...</h2>
+      <div id="context-text"></div>
+      <button id="start-mission-btn">ACCEPTER LE PROTOCOLE</button>
+    </div>
   </div>
   
   <canvas id="bio-canvas"></canvas>
@@ -361,8 +421,31 @@
 
     const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
     
+    // --- VARIABLES LORE ---
+    const contextOverlay = document.getElementById('context-overlay');
+    const contextTextDiv = document.getElementById('context-text');
+    const startMissionBtn = document.getElementById('start-mission-btn');
+
+    const BRIEFING_TEXT = 
+`IDENTIFICATION CONFIRMÉE.
+
+Bienvenue dans le Projet Genèse, Scientifique.
+
+Votre mission est simple : cultiver la souche primitive. 
+Nous ignorons encore ses capacités, mais les premières simulations indiquent un potentiel de croissance exponentiel.
+
+Ne vous posez pas de questions sur l'origine des échantillons.
+Ne vous inquiétez pas des effets secondaires.
+Concentrez-vous sur la production.
+
+Le monde est prêt pour la prochaine étape de l'évolution.
+À vous de jouer.
+
+TERMINE.`;
+
     if(localStorage.getItem('viral_username')) loginInput.value = localStorage.getItem('viral_username');
 
+    // --- LOGIN MODIFIÉ AVEC LORE ---
     loginForm.onsubmit = (e) => { 
         e.preventDefault(); 
         const name = loginInput.value.trim(); 
@@ -371,11 +454,42 @@
             socket.emit('set_username', name); 
             currentUsernameDisplay.innerText = name; 
             localStorage.setItem('viral_username', name); 
+            
             loginOverlay.style.display = 'none'; 
+            launchContextSequence(); // On lance la séquence à chaque connexion
         } else { 
             loginInput.style.borderColor = "var(--error-color)"; 
             setTimeout(() => loginInput.style.borderColor = "var(--border-color)", 300); 
         } 
+    };
+    
+    function launchContextSequence() {
+        contextOverlay.style.display = 'flex';
+        let i = 0;
+        const speed = 30; // Vitesse de frappe
+
+        function typeWriter() {
+            if (i < BRIEFING_TEXT.length) {
+                contextTextDiv.textContent += BRIEFING_TEXT.charAt(i);
+                i++;
+                // Petit son de frappe aléatoire
+                // if(Math.random() > 0.8) Sound.click(); 
+                setTimeout(typeWriter, speed);
+            } else {
+                startMissionBtn.style.display = 'block';
+                startMissionBtn.classList.add('revealed');
+            }
+        }
+        typeWriter();
+    }
+
+    startMissionBtn.onclick = () => {
+        Sound.buy(); // Son de confirmation
+        contextOverlay.style.opacity = '0';
+        contextOverlay.style.transition = 'opacity 1s ease';
+        setTimeout(() => {
+            contextOverlay.style.display = 'none';
+        }, 1000);
     };
     
     const chatForm = document.getElementById('chat-form'); 
@@ -488,7 +602,6 @@
     function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost" style="color:var(--viral-green)">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
     
-    // --- FONCTION POUR L'EXPLOSION DE PARTICULES À L'ACHAT ---
     function spawnBuyExplosion(x, y) {
       const colors = ['#ffc107', '#ffffff', '#58a6ff']; 
       for(let i=0; i<12; i++) {
@@ -522,7 +635,6 @@
                 setTimeout(()=>el.classList.remove('purchased-anim'),300); 
                 Sound.buy(); 
                 
-                // Effet d'explosion
                 let ex = e.clientX;
                 let ey = e.clientY;
                 if(!ex || !ey) {
@@ -543,7 +655,6 @@
       if (!e.isTrusted) return; 
       socket.emit('click_cell'); 
 
-      // --- EFFET RIPPLE SUR LE BOUTON ---
       const ripple = document.createElement('div');
       ripple.className = 'ripple';
       const rect = cellBtn.getBoundingClientRect();
