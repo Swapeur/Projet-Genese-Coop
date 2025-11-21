@@ -1,12 +1,11 @@
 const express = require('express');
-const mongoose = require('mongoose'); // MODIFICATION: Import Mongoose
-require('dotenv').config(); // MODIFICATION: Import Dotenv pour la sécurité
+const mongoose = require('mongoose');
+require('dotenv').config();
 const app = express();
 const http = require('http').createServer(app);
 const { Server } = require("socket.io");
 const io = new Server(http);
-
-// Note : On a supprimé 'fs' car on n'utilise plus de fichiers locaux
+const https = require('https'); // Nécessaire pour l'anti-veille
 
 // --- SÉCURITÉ & MIDDLEWARE ---
 const xss = require('xss');
@@ -20,10 +19,9 @@ app.use(rateLimit({ windowMs: 15*60*1000, max: 1000 }));
 // --- CONFIGURATION MONGODB ---
 const MONGO_URI = process.env.MONGO_URI;
 
-// Définition du schéma de sauvegarde (flexible pour accepter de futurs ajouts)
 const GameSchema = new mongoose.Schema({
-  isGlobalSave: { type: Boolean, default: true, unique: true }, // Identifiant unique de la save globale
-  data: { type: mongoose.Schema.Types.Mixed } // Stocke tout l'objet gameState
+  isGlobalSave: { type: Boolean, default: true, unique: true },
+  data: { type: mongoose.Schema.Types.Mixed }
 }, { strict: false });
 
 const GameModel = mongoose.model('GlobalSave', GameSchema);
@@ -31,7 +29,7 @@ const GameModel = mongoose.model('GlobalSave', GameSchema);
 // --- CONSTANTES JEU ---
 const TICK_RATE_MS = 200; 
 const COST_MULTIPLIER = 1.15;
-const SAVE_INTERVAL_MS = 10000; // Sauvegarde automatique toutes les 10s
+const SAVE_INTERVAL_MS = 10000; 
 const PRESTIGE_THRESHOLD = 1e14; 
 
 // REGLAGES JEU
@@ -164,7 +162,6 @@ const defaultGameState = {
   supernova_virale: 0, cost_nova: 8000000000000000, gain_nova: 100000000000000
 };
 
-// Initialisation avec les valeurs par défaut (sera écrasé par la DB au lancement)
 let gameState = { ...defaultGameState };
 
 function safeNum(val, fallback = 0) {
@@ -273,7 +270,6 @@ function getAvailableBoosts(state) {
   return available;
 }
 
-// --- MODIFICATION MONGO: FONCTION SAUVEGARDE ---
 async function saveGameState() {
   try {
     await GameModel.findOneAndUpdate(
@@ -281,7 +277,6 @@ async function saveGameState() {
       { data: gameState }, 
       { upsert: true, new: true }
     );
-    // console.log("💾 Jeu sauvegardé sur MongoDB");
   } catch (e) {
     console.error("⚠️ Erreur sauvegarde MongoDB:", e);
   }
@@ -487,22 +482,18 @@ function gameLoop() {
 
 app.get('/', (req, res) => res.sendFile(__dirname + '/index.html'));
 
-// --- MODIFICATION MONGO: DÉMARRAGE ASYNCHRONE ---
+// --- DÉMARRAGE ASYNCHRONE ---
 async function startGame() {
   try {
     console.log("📡 Connexion à MongoDB Atlas...");
     await mongoose.connect(MONGO_URI);
     console.log("✅ Connecté à la base de données.");
 
-    // Chargement de la sauvegarde
     const savedDoc = await GameModel.findOne({ isGlobalSave: true });
     
     if (savedDoc && savedDoc.data) {
       console.log("📂 Sauvegarde trouvée, chargement...");
-      // Fusion des données pour éviter les crashs si de nouveaux champs ont été ajoutés au code
       gameState = { ...defaultGameState, ...savedDoc.data };
-      
-      // Sécurisation des nombres
       for(const key in gameState) {
           if(typeof gameState[key] === 'number' && (isNaN(gameState[key]) || !isFinite(gameState[key]))) {
              gameState[key] = defaultGameState[key] || 0;
@@ -511,14 +502,29 @@ async function startGame() {
       applyAllPurchasedBoosts(gameState);
     } else {
       console.log("✨ Aucune sauvegarde, création d'une nouvelle partie.");
-      await saveGameState(); // Créer le premier document
+      await saveGameState(); 
     }
 
-    // Lancement des boucles
+    // Boucles de jeu
     setInterval(gameLoop, TICK_RATE_MS);
     setInterval(saveGameState, SAVE_INTERVAL_MS);
 
-    // Lancement du serveur Web
+    // ANTI-VEILLE RENDER (Keep-Alive)
+    if (process.env.RENDER_EXTERNAL_URL) { 
+      console.log("⏰ Système Anti-Veille activé sur", process.env.RENDER_EXTERNAL_URL);
+      const keepAliveInterval = 14 * 60 * 1000; 
+      
+      setInterval(() => {
+        https.get(process.env.RENDER_EXTERNAL_URL, (resp) => {
+          if (resp.statusCode === 200) {
+            // Ping réussi
+          }
+        }).on("error", (err) => {
+          console.error("⚠️ Erreur Ping anti-veille :", err.message);
+        });
+      }, keepAliveInterval);
+    }
+
     const PORT = process.env.PORT || 3000;
     http.listen(PORT, () => console.log(`🚀 Serveur prêt sur le port ${PORT}`));
 
@@ -528,5 +534,4 @@ async function startGame() {
   }
 }
 
-// Lancement
 startGame();
