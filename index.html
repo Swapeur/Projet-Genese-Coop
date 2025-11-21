@@ -109,7 +109,6 @@
     #login-box::before { content:''; position:absolute; top:0; left:0; width:100%; height:10px; background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 10px, #000 10px, #000 20px); }
     #login-box::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:10px; background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 10px, #000 10px, #000 20px); }
 
-    /* CORRECTION BARRE JAUNE LOGIN : On force le transparent ici */
     #login-box h2 { 
         color: var(--hazard-yellow); 
         margin-bottom: 20px; 
@@ -147,7 +146,6 @@
     }
     #context-box::before { top: 0; } #context-box::after { bottom: 0; }
 
-    /* CORRECTION BARRE JAUNE INTRO : On force le transparent ici aussi */
     #context-box h2 {
       color: var(--hazard-yellow); font-size: 1.5em; margin-bottom: 20px; margin-top: 10px;
       border-bottom: 1px dashed var(--hazard-yellow); padding-bottom: 10px; text-align: left; border-left: none; padding-left: 0;
@@ -316,12 +314,17 @@
     .prestige-btn.secondary { border-color: var(--hazard-yellow); color: var(--hazard-yellow); }
     .prestige-btn.secondary:hover { background: var(--hazard-yellow); color: #000; box-shadow: 0 0 15px var(--hazard-yellow); }
 
-    /* --- MODALE --- */
-    #modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 5000; justify-content: center; align-items: center; }
-    #modal { width: 600px; max-height: 80vh; background: #0d1117; border: 2px solid var(--hazard-yellow); border-radius: 0; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); }
-    #modal-header { padding: 15px; border-bottom: 2px solid var(--hazard-yellow); text-align: center; background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); }
-    #modal-header h2 { color: var(--hazard-yellow); background: none; border: none; box-shadow: none; padding: 0; margin: 0; }
-    #modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+    /* --- MODALES COMMUNES (Settings, Stats, Meta) --- */
+    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; justify-content: center; align-items: center; }
+    .modal-content { width: 600px; max-width: 95%; max-height: 80vh; background: #0d1117; border: 2px solid var(--hazard-yellow); border-radius: 0; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); }
+    .modal-header { padding: 15px; border-bottom: 2px solid var(--hazard-yellow); text-align: center; background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); }
+    .modal-header h2 { color: var(--hazard-yellow); background: none; border: none; box-shadow: none; padding: 0; margin: 0; font-size: 1.5em; }
+    .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    
+    .close-btn { margin-top: 10px; padding: 12px; background: var(--hazard-yellow); border: none; color: #000; font-weight: bold; font-family: inherit; cursor: pointer; text-transform: uppercase; width: 100%; }
+    .close-btn:hover { background: #fff; }
+
+    /* --- CONTENU SPECIFIQUE MODALES --- */
     .p-upgrade { background: #111; border: 1px solid #333; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
     .p-upgrade:hover { border-color: var(--hazard-yellow); background: #222; }
     .p-upgrade.purchased { border-color: var(--viral-green); opacity: 0.6; }
@@ -376,6 +379,40 @@
     .blink-cursor::after { content: '█'; animation: blink 1s infinite; margin-left: 5px; color: var(--hazard-yellow); }
     @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+    /* --- ICONES UI GAUCHE (Settings & Stats) --- */
+    .ui-icon-btn {
+      position: absolute; left: 15px;
+      font-size: 2em; cursor: pointer; z-index: 100;
+      color: var(--hazard-yellow); transition: transform 0.3s, color 0.3s;
+      filter: drop-shadow(0 0 5px #000); width: 40px; height: 40px; text-align: center;
+    }
+    .ui-icon-btn:hover { transform: scale(1.2); color: #fff; }
+    
+    #settings-btn { top: 15px; }
+    #settings-btn:hover { transform: rotate(90deg); }
+    
+    #stats-btn { top: 65px; font-size: 1.8em; }
+
+    /* --- STYLES PARAMÈTRES & STATS --- */
+    .setting-row, .stat-row {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 1.1em; color: #aaffaa; padding: 5px 0; border-bottom: 1px solid #222;
+    }
+    .stat-row span:last-child { font-weight: bold; color: var(--viral-green); }
+    .stat-group { margin-bottom: 15px; }
+    .stat-group h3 { font-size: 0.9em; color: #888; text-transform: uppercase; border-bottom: 1px dashed #444; margin-bottom: 5px; }
+
+    .setting-toggle {
+      background: transparent; border: 1px solid var(--viral-green);
+      color: var(--viral-green); padding: 5px 15px; cursor: pointer;
+      font-family: inherit; font-weight: bold; min-width: 60px;
+    }
+    .setting-toggle.off { border-color: #555; color: #555; }
+    .setting-toggle:hover { background: var(--viral-green); color: #000; box-shadow: 0 0 10px var(--viral-green); }
+    .setting-toggle.off:hover { background: #555; color: #fff; box-shadow: none; }
+    .setting-toggle.danger { border-color: var(--error-color); color: var(--error-color); }
+    .setting-toggle.danger:hover { background: var(--error-color); color: #fff; box-shadow: 0 0 15px var(--error-color); }
+
   </style>
 </head>
 <body>
@@ -398,6 +435,9 @@
   <div id="passive-particle-container"></div>
   <div class="container">
     <div id="game-area">
+      <div id="settings-btn" class="ui-icon-btn">⚙️</div>
+      <div id="stats-btn" class="ui-icon-btn">📊</div>
+      
       <h1>☣ Projet : Genèse ☣</h1><div id="player-count">SCIENTIFIQUES : 0</div>
       <div class="score-panel"><div id="scoreDisplay">0</div><p class="score-label">Cellules Infectées</p><div id="cps-display">+0 CI/s</div></div>
       <div id="leaderboard-panel"><h3>Top Contagion</h3><ul id="leaderboard-list"></ul></div>
@@ -445,7 +485,64 @@
 
     </div>
   </div>
-  <div id="tooltip"></div><div id="modal-backdrop"><div id="modal"><div id="modal-header"><h2>Méta-Recherche</h2><p>Améliorations permanentes</p></div><div id="modal-body"></div></div></div>
+  <div id="tooltip"></div>
+  
+  <div id="modal-backdrop" class="modal-backdrop"><div id="modal" class="modal-content"><div class="modal-header"><h2>Méta-Recherche</h2><p>Améliorations permanentes</p></div><div id="modal-body" class="modal-body"></div><button class="close-btn" onclick="document.getElementById('modal-backdrop').style.display='none'">Fermer</button></div></div>
+
+  <div id="settings-modal-backdrop" class="modal-backdrop">
+    <div id="settings-modal" class="modal-content" style="width: 400px;">
+      <div class="modal-header">
+        <h2>CONFIGURATION SYSTÈME</h2>
+      </div>
+      <div class="modal-body">
+        <div class="setting-row">
+          <span>AUDIO (SFX)</span>
+          <button id="toggle-audio" class="setting-toggle">ON</button>
+        </div>
+        <div class="setting-row">
+          <span>FILTRE CRT (Scanlines)</span>
+          <button id="toggle-crt" class="setting-toggle">ON</button>
+        </div>
+        <div class="setting-row">
+          <span>PARTICULES (Performance)</span>
+          <button id="toggle-particles" class="setting-toggle">ON</button>
+        </div>
+        <hr style="border: 0; border-top: 1px dashed #333; margin: 10px 0;">
+        <div class="setting-row">
+          <span>ID SESSION</span>
+          <button id="btn-logout" class="setting-toggle danger">DÉCONNEXION</button>
+        </div>
+        <button id="close-settings" class="close-btn">APPLIQUER & FERMER</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="stats-modal-backdrop" class="modal-backdrop">
+    <div id="stats-modal" class="modal-content">
+      <div class="modal-header">
+        <h2>DONNÉES ÉPIDÉMIOLOGIQUES</h2>
+        <p>Rapport d'analyse global</p>
+      </div>
+      <div class="modal-body" id="stats-body">
+        <div class="stat-group">
+          <h3>Statistiques Globales (Monde)</h3>
+          <div class="stat-row"><span>Total Infecté (Depuis toujours)</span> <span id="stat-total-ever">0</span></div>
+          <div class="stat-row"><span>Total Clicks (Tous joueurs)</span> <span id="stat-total-clicks">0</span></div>
+          <div class="stat-row"><span>Boosts Découverts</span> <span id="stat-boosts-unlocked">0</span></div>
+          <div class="stat-row"><span>Points de Prestige (PR)</span> <span id="stat-prestige">0</span></div>
+        </div>
+        
+        <div class="stat-group">
+          <h3>Session Locale (Vous)</h3>
+          <div class="stat-row"><span>Stock Actuel</span> <span id="stat-current-score">0</span></div>
+          <div class="stat-row"><span>Production Actuelle</span> <span id="stat-current-cps">0 CI/s</span></div>
+          <div class="stat-row"><span>Clics cette session</span> <span id="stat-local-clicks">0</span></div>
+          <div class="stat-row"><span>Temps de session</span> <span id="stat-session-time">00:00</span></div>
+        </div>
+        <button class="close-btn" onclick="document.getElementById('stats-modal-backdrop').style.display='none'">Fermer le Rapport</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
@@ -456,12 +553,81 @@
     }
 
     const socket = io({ auth: { token: deviceId } });
+
+    // --- VARIABLES SESSION ---
+    let mySessionClicks = 0;
+    const sessionStartTime = Date.now();
+
+    // --- GESTION DES PARAMÈTRES ---
+    const defaultSettings = { audio: true, crt: true, particles: true };
+    let userSettings = JSON.parse(localStorage.getItem('viral_settings')) || defaultSettings;
+
+    function saveSettings() {
+      localStorage.setItem('viral_settings', JSON.stringify(userSettings));
+      applySettings();
+    }
+
+    function applySettings() {
+      const crtEl = document.getElementById('global-crt');
+      if (crtEl) crtEl.style.display = userSettings.crt ? 'block' : 'none';
+      
+      updateBtnState('toggle-audio', userSettings.audio);
+      updateBtnState('toggle-crt', userSettings.crt);
+      updateBtnState('toggle-particles', userSettings.particles);
+    }
+
+    function updateBtnState(id, state) {
+      const btn = document.getElementById(id);
+      if(!btn) return;
+      btn.innerText = state ? 'ON' : 'OFF';
+      btn.className = state ? 'setting-toggle' : 'setting-toggle off';
+    }
+    
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const Sound = {
-      click: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(400, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); osc.start(); osc.stop(audioCtx.currentTime + 0.15); },
-      buy: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'triangle'; osc.frequency.setValueAtTime(200, audioCtx.currentTime); osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); },
-      chat: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); },
-      bonus: () => { if(audioCtx.state === 'suspended') audioCtx.resume(); const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; osc.frequency.setValueAtTime(600, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); }
+      click: () => { 
+        if (!userSettings.audio) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume(); 
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
+        osc.frequency.setValueAtTime(400, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.15); 
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime); 
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15); 
+        osc.start(); osc.stop(audioCtx.currentTime + 0.15); 
+      },
+      buy: () => { 
+        if (!userSettings.audio) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume(); 
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'triangle'; 
+        osc.frequency.setValueAtTime(200, audioCtx.currentTime); 
+        osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.1); 
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime); 
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1); 
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
+      },
+      chat: () => { 
+        if (!userSettings.audio) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume(); 
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
+        osc.frequency.setValueAtTime(800, audioCtx.currentTime); 
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime); 
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); 
+        osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
+      },
+      bonus: () => { 
+        if (!userSettings.audio) return;
+        if(audioCtx.state === 'suspended') audioCtx.resume(); 
+        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
+        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
+        osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
+        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3); 
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); 
+        osc.start(); osc.stop(audioCtx.currentTime + 0.3); 
+      }
     };
 
     let lastState = null; let lastUpdate = Date.now(); let currentScore = 0; let currentClickValue = 1;
@@ -477,6 +643,13 @@
       return parseFloat((num / 1000000000000000000).toFixed(2)) + 'Qi'; 
     }
 
+    function formatTime(ms) {
+      const seconds = Math.floor((ms / 1000) % 60);
+      const minutes = Math.floor((ms / (1000 * 60)) % 60);
+      const hours = Math.floor((ms / (1000 * 60 * 60)));
+      return `${hours}h ${minutes}m ${seconds}s`;
+    }
+
     const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
     
     const contextOverlay = document.getElementById('context-overlay');
@@ -486,17 +659,24 @@
     const BRIEFING_TEXT = 
 `IDENTIFICATION CONFIRMÉE.
 
-Bienvenue dans le Projet Genèse, Docteur.
+Bienvenue dans le Projet Genèse, Scientifique.
 
 Votre mission est simple : cultiver la souche primitive. 
+
 Nous ignorons encore ses capacités, mais les premières simulations indiquent un potentiel de croissance exponentiel.
 
+
 Ne vous posez pas de questions sur l'origine des échantillons.
+
 Ne vous inquiétez pas des effets secondaires.
+
 Concentrez-vous sur la production.
 
+
 Le monde est prêt pour la prochaine étape de l'évolution.
+
 À vous de jouer.
+
 
 TERMINE.`;
 
@@ -506,7 +686,7 @@ TERMINE.`;
         e.preventDefault(); 
         const name = loginInput.value.trim(); 
         if(name.length > 0) { 
-            if(audioCtx.state === 'suspended') audioCtx.resume(); 
+            if(userSettings.audio && audioCtx.state === 'suspended') audioCtx.resume(); 
             socket.emit('set_username', name); 
             currentUsernameDisplay.innerText = name; 
             localStorage.setItem('viral_username', name); 
@@ -657,6 +837,7 @@ TERMINE.`;
     function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
     
     function spawnBuyExplosion(x, y) {
+      if (!userSettings.particles) return;
       const colors = ['#ffd700', '#fff', '#aaffaa']; 
       for(let i=0; i<12; i++) {
         const p = document.createElement('div');
@@ -708,6 +889,9 @@ TERMINE.`;
     cellBtn.onclick = (e) => { 
       if (!e.isTrusted) return; 
       socket.emit('click_cell'); 
+      
+      // Session stats
+      mySessionClicks++;
 
       const ripple = document.createElement('div');
       ripple.className = 'ripple';
@@ -745,6 +929,58 @@ TERMINE.`;
 
     document.getElementById('btn-reset').onclick = () => { if(confirm('Prestige ? Reset complet vs PR.')) socket.emit('do_prestige'); }; document.getElementById('btn-meta').onclick = () => { document.getElementById('modal-backdrop').style.display = 'flex'; renderPrestigeShop(); }; document.getElementById('modal-backdrop').onclick = (e) => { if(e.target.id === 'modal-backdrop') e.target.style.display = 'none'; };
 
+    // LOGIQUE UI (Paramètres & Stats)
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsBackdrop = document.getElementById('settings-modal-backdrop');
+    const closeSettingsBtn = document.getElementById('close-settings');
+
+    settingsBtn.onclick = () => {
+      settingsBackdrop.style.display = 'flex';
+      applySettings();
+    };
+    closeSettingsBtn.onclick = () => { settingsBackdrop.style.display = 'none'; };
+
+    document.getElementById('toggle-audio').onclick = () => { userSettings.audio = !userSettings.audio; saveSettings(); };
+    document.getElementById('toggle-crt').onclick = () => { userSettings.crt = !userSettings.crt; saveSettings(); };
+    document.getElementById('toggle-particles').onclick = () => { userSettings.particles = !userSettings.particles; saveSettings(); };
+    document.getElementById('btn-logout').onclick = () => {
+      if(confirm("ATTENTION : Cela effacera votre identité locale. Si vous n'avez pas noté votre ID, la progression sera inaccessible. Continuer ?")) {
+        localStorage.removeItem('viral_device_id');
+        localStorage.removeItem('viral_username');
+        location.reload();
+      }
+    };
+    
+    // LOGIQUE STATS
+    const statsBtn = document.getElementById('stats-btn');
+    const statsBackdrop = document.getElementById('stats-modal-backdrop');
+    
+    statsBtn.onclick = () => {
+        statsBackdrop.style.display = 'flex';
+        updateStats();
+    };
+    
+    function updateStats() {
+        if (!lastState) return;
+        const s = lastState;
+        document.getElementById('stat-total-ever').innerText = formatNumber(s.totalCellsEver || 0);
+        document.getElementById('stat-total-clicks').innerText = formatNumber(s.totalClicks || 0);
+        document.getElementById('stat-boosts-unlocked').innerText = (s.purchasedBoosts ? s.purchasedBoosts.length : 0);
+        document.getElementById('stat-prestige').innerText = formatNumber(s.prestigePoints || 0);
+        
+        document.getElementById('stat-current-score').innerText = formatNumber(currentScore);
+        document.getElementById('stat-current-cps').innerText = formatNumber(s.cellsPerSecond || 0) + " CI/s";
+        document.getElementById('stat-local-clicks').innerText = mySessionClicks;
+        document.getElementById('stat-session-time').innerText = formatTime(Date.now() - sessionStartTime);
+        
+        if(statsBackdrop.style.display === 'flex') {
+            requestAnimationFrame(updateStats);
+        }
+    }
+
+    // Initialisation au chargement
+    applySettings();
+
     socket.on('tick_update', (d) => { 
       if(!lastState) return; 
       lastState.totalInfectedCells = d.score; 
@@ -777,8 +1013,8 @@ TERMINE.`;
 
     el.innerText = ico; el.onclick = () => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; if(currentScore >= cost) { socket.emit('buy_boost', b.id); el.remove(); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; showTip(e, b.name, cost, b.description); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; el.dataset.cost = cost; boostCont.appendChild(el); } const pInfo = d.prestigeInfo; const pArea = document.getElementById('prestige-area'); if(pInfo.canPrestige || s.prestigePoints > 0) { pArea.style.display = 'block'; document.getElementById('p-gain').innerText = formatNumber(pInfo.pointsOnReset); document.getElementById('p-total').innerText = formatNumber(s.prestigePoints); } else { pArea.style.display = 'none'; } renderPrestigeShop(); });
     function renderPrestigeShop() { if(!lastState) return; const body = document.getElementById('modal-body'); body.innerHTML = ''; for(const id in prestigeUpgradesList) { const u = prestigeUpgradesList[id]; const row = document.createElement('div'); row.className = 'p-upgrade'; row.innerHTML = `<div><h4>${u.name}</h4><div class="description">${u.description}</div></div><div class="cost">${u.cost} PR</div>`; const isBought = lastState.purchasedPrestigeUpgrades.includes(id); const canBuy = lastState.prestigePoints >= u.cost; if(isBought) row.classList.add('purchased'); else if(!canBuy) row.classList.add('disabled'); row.onclick = () => { if(!isBought && canBuy) { socket.emit('buy_prestige_upgrade', id); row.classList.add('purchased'); Sound.buy(); } else if (!isBought) { row.classList.add('error-anim'); setTimeout(()=>row.classList.remove('error-anim'),300); } }; body.appendChild(row); } }
-    function spawnParticle(src, n) { const rect = src.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const area = document.getElementById('game-area').getBoundingClientRect(); for(let i=0; i<n; i++) { const p = document.createElement('div'); p.className = 'particle'; const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px'; p.style.left = (rect.left - area.left + rect.width/2)+'px'; p.style.top = (rect.top - area.top + rect.height/2)+'px'; const tx = (dest.left - rect.left) + (Math.random()-0.5)*50; const ty = (dest.top - rect.top) + (Math.random()-0.5)*50; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); partCont.appendChild(p); setTimeout(()=>p.remove(), 1000); } }
-    function spawnPassive() { const rect = storeEl.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const p = document.createElement('div'); p.className='passive-particle'; const s = Math.random()*3+2; p.style.width=s+'px'; p.style.height=s+'px'; const startY = Math.random() * window.innerHeight; p.style.left = rect.left+'px'; p.style.top = startY+'px'; const tx = dest.left - rect.left + 50; const ty = (dest.top + 20) - startY; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); passPartCont.appendChild(p); setTimeout(()=>p.remove(), 2000); }
+    function spawnParticle(src, n) { if (!userSettings.particles) return; const rect = src.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const area = document.getElementById('game-area').getBoundingClientRect(); for(let i=0; i<n; i++) { const p = document.createElement('div'); p.className = 'particle'; const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px'; p.style.left = (rect.left - area.left + rect.width/2)+'px'; p.style.top = (rect.top - area.top + rect.height/2)+'px'; const tx = (dest.left - rect.left) + (Math.random()-0.5)*50; const ty = (dest.top - rect.top) + (Math.random()-0.5)*50; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); partCont.appendChild(p); setTimeout(()=>p.remove(), 1000); } }
+    function spawnPassive() { if (!userSettings.particles) return; const rect = storeEl.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const p = document.createElement('div'); p.className='passive-particle'; const s = Math.random()*3+2; p.style.width=s+'px'; p.style.height=s+'px'; const startY = Math.random() * window.innerHeight; p.style.left = rect.left+'px'; p.style.top = startY+'px'; const tx = dest.left - rect.left + 50; const ty = (dest.top + 20) - startY; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); passPartCont.appendChild(p); setTimeout(()=>p.remove(), 2000); }
 
     function render() { 
       try { 
@@ -818,7 +1054,7 @@ TERMINE.`;
               b.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; 
           } 
           
-          if(cps > 0) { 
+          if(cps > 0 && userSettings.particles) { 
               const chance = Math.log10(cps+1) * 0.05; 
               if(Math.random() < chance) spawnPassive(); 
           } 
