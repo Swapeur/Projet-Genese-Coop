@@ -39,7 +39,7 @@
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
       background-size: 100% 3px, 3px 100%;
-      pointer-events: none; /* Important pour pouvoir cliquer au travers */
+      pointer-events: none; 
       z-index: 99999; 
       box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
     }
@@ -62,32 +62,14 @@
     
     /* --- ZONE DE JEU --- */
     #game-area { 
-      flex-grow: 1; 
-      display: flex; 
-      flex-direction: column; 
-      align-items: center; 
-      justify-content: space-around; 
-      height: 100%; 
-      border-right: 4px solid var(--hazard-yellow); 
-      position: relative; 
-      z-index: 20; 
-      padding-top: 10px; 
-      padding-bottom: 10px;
+      flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: space-around; height: 100%; 
+      border-right: 4px solid var(--hazard-yellow); position: relative; z-index: 20; padding-top: 10px; padding-bottom: 10px;
     }
 
     /* --- MAGASIN --- */
     #store-area { 
-      width: 380px; 
-      min-width: 380px; 
-      background-color: var(--panel-bg); 
-      height: 100%; 
-      overflow-y: auto; 
-      padding: 10px; 
-      z-index: 20; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 10px; 
-      border-left: 2px solid #000;
+      width: 380px; min-width: 380px; background-color: var(--panel-bg); height: 100%; overflow-y: auto; padding: 10px; 
+      z-index: 20; display: flex; flex-direction: column; gap: 10px; border-left: 2px solid #000;
     }
     
     ::-webkit-scrollbar { width: 8px; }
@@ -95,120 +77,54 @@
     ::-webkit-scrollbar-thumb { background: var(--hazard-yellow); border-radius: 0; }
     ::-webkit-scrollbar-thumb:hover { background: var(--viral-green); }
 
-    /* --- LOGIN --- */
+    /* --- LOGIN SÉCURISÉ (MODIFIÉ POUR AUTH) --- */
     #login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    
     #login-box { 
-      background: var(--panel-bg); 
-      border: 2px solid var(--hazard-yellow); 
-      padding: 40px; 
-      text-align: center; 
-      box-shadow: 0 0 50px rgba(255, 215, 0, 0.2);
-      position: relative;
+      background: var(--panel-bg); border: 2px solid var(--hazard-yellow); padding: 40px; text-align: center; 
+      box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); position: relative; width: 350px;
     }
-    #login-box::before { content:''; position:absolute; top:0; left:0; width:100%; height:10px; background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 10px, #000 10px, #000 20px); }
-    #login-box::after { content:''; position:absolute; bottom:0; left:0; width:100%; height:10px; background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 10px, #000 10px, #000 20px); }
-
-    #login-box h2 { 
-        color: var(--hazard-yellow); 
-        margin-bottom: 20px; 
-        border: none; 
-        background: transparent; 
-        box-shadow: none; 
-        padding: 0;
-    }
+    #login-box h2 { color: var(--hazard-yellow); margin-bottom: 20px; border: none; background: transparent; box-shadow: none; padding: 0; }
     
-    #login-input { padding: 10px; font-family: inherit; font-size: 1.2em; background: #000; border: 1px solid var(--hazard-yellow); color: var(--hazard-yellow); width: 250px; text-align: center; margin-bottom: 20px; outline: none; }
-    #login-input:focus { box-shadow: 0 0 10px var(--hazard-yellow); }
-    #login-btn { padding: 10px 30px; font-family: inherit; font-size: 1.2em; font-weight: bold; background: var(--hazard-yellow); border: none; color: #000; cursor: pointer; text-transform: uppercase; }
-    #login-btn:hover { background: #fff; box-shadow: 0 0 20px #fff; }
+    .auth-input { padding: 10px; font-family: inherit; font-size: 1.1em; background: #000; border: 1px solid var(--hazard-yellow); color: var(--hazard-yellow); width: 100%; text-align: center; margin-bottom: 10px; outline: none; }
+    .auth-input:focus { box-shadow: 0 0 10px var(--hazard-yellow); }
+    .auth-btn { padding: 10px 20px; font-family: inherit; font-size: 1em; font-weight: bold; background: var(--hazard-yellow); border: none; color: #000; cursor: pointer; text-transform: uppercase; width: 48%; }
+    .auth-btn:hover { background: #fff; box-shadow: 0 0 20px #fff; }
+    .auth-btn.secondary { background: transparent; border: 1px solid var(--hazard-yellow); color: var(--hazard-yellow); }
+    .auth-btn.secondary:hover { background: var(--hazard-yellow); color: #000; }
+    #login-error { color: var(--error-color); margin-bottom: 10px; min-height: 20px; font-size: 0.9em; }
 
     /* --- INTRO (LORE) --- */
     #context-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-      background-color: #000;
-      z-index: 9000; 
-      display: none; 
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: #000; z-index: 9000; display: none; 
       justify-content: center; align-items: center;
     }
     #context-box {
-      width: 700px; max-width: 90%;
-      background: rgba(10, 12, 10, 0.95);
-      border-left: 4px solid var(--hazard-yellow);
-      border-right: 4px solid var(--hazard-yellow);
-      padding: 40px;
-      box-shadow: 0 0 40px rgba(255, 215, 0, 0.15), inset 0 0 50px rgba(0,0,0,0.8);
-      position: relative;
+      width: 700px; max-width: 90%; background: rgba(10, 12, 10, 0.95); border-left: 4px solid var(--hazard-yellow); border-right: 4px solid var(--hazard-yellow);
+      padding: 40px; box-shadow: 0 0 40px rgba(255, 215, 0, 0.15), inset 0 0 50px rgba(0,0,0,0.8); position: relative;
     }
-    #context-box::before, #context-box::after {
-      content: ''; position: absolute; left: 0; width: 100%; height: 15px;
-      background: repeating-linear-gradient(45deg, var(--hazard-yellow), var(--hazard-yellow) 15px, #000 15px, #000 30px);
-    }
-    #context-box::before { top: 0; } #context-box::after { bottom: 0; }
-
-    #context-box h2 {
-      color: var(--hazard-yellow); font-size: 1.5em; margin-bottom: 20px; margin-top: 10px;
-      border-bottom: 1px dashed var(--hazard-yellow); padding-bottom: 10px; text-align: left; border-left: none; padding-left: 0;
-      background: transparent; box-shadow: none; 
-    }
-    
     #context-text { color: #aaffaa; font-size: 1.1em; line-height: 1.6; min-height: 150px; white-space: pre-wrap; text-shadow: 0 0 2px var(--viral-green); }
     #start-mission-btn {
-      margin-top: 30px; padding: 15px 30px; font-size: 1.2em; font-weight: bold;
-      background: transparent; border: 2px solid var(--hazard-yellow); color: var(--hazard-yellow);
+      margin-top: 30px; padding: 15px 30px; font-size: 1.2em; font-weight: bold; background: transparent; border: 2px solid var(--hazard-yellow); color: var(--hazard-yellow);
       cursor: pointer; width: 100%; font-family: inherit; transition: all 0.2s; display: none; text-transform: uppercase; letter-spacing: 1px;
     }
     #start-mission-btn:hover { background: var(--hazard-yellow); color: #000; box-shadow: 0 0 25px var(--hazard-yellow); }
 
-    /* --- SIGNATURE --- */
-    #signature {
-      position: absolute; bottom: 10px; right: 15px;
-      font-size: 0.8em; color: var(--hazard-yellow); opacity: 0.5;
-      font-weight: bold; letter-spacing: 1px; pointer-events: none; z-index: 10;
-      text-shadow: 0 0 5px rgba(0,0,0,0.8);
-    }
-
-    /* --- CANVAS FOND --- */
-    #bio-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.3; }
-
     /* --- SCORE PANEL --- */
     .score-panel { 
-      background-color: #000; 
-      border: 2px solid var(--viral-green); 
-      padding: 15px 40px; 
-      border-radius: 0; 
-      box-shadow: 0 0 15px rgba(63, 185, 80, 0.2), inset 0 0 20px rgba(63, 185, 80, 0.1);
-      text-align: center; 
-      position: relative;
+      background-color: #000; border: 2px solid var(--viral-green); padding: 15px 40px; border-radius: 0; 
+      box-shadow: 0 0 15px rgba(63, 185, 80, 0.2), inset 0 0 20px rgba(63, 185, 80, 0.1); text-align: center; position: relative;
     }
-    .score-panel::after { content: ''; position: absolute; top: -2px; left: -2px; width: 10px; height: 10px; border-top: 2px solid var(--hazard-yellow); border-left: 2px solid var(--hazard-yellow); }
-    .score-panel::before { content: ''; position: absolute; bottom: -2px; right: -2px; width: 10px; height: 10px; border-bottom: 2px solid var(--hazard-yellow); border-right: 2px solid var(--hazard-yellow); }
-
-    #scoreDisplay { 
-      font-size: 3.5em; color: var(--viral-green); 
-      text-shadow: 0 0 10px var(--viral-glow);
-      font-variant-numeric: tabular-nums; transition: transform 0.1s; display: block; 
-    }
-    #scoreDisplay.pop { transform: scale(1.1); color: #fff; text-shadow: 0 0 20px #fff; }
-    .score-label { font-size: 1.2em; margin-top: 5px; color: #666; text-transform: uppercase; letter-spacing: 2px; }
+    #scoreDisplay { font-size: 3.5em; color: var(--viral-green); text-shadow: 0 0 10px var(--viral-glow); display: block; }
     #cps-display { color: var(--hazard-yellow); font-size: 1.5em; margin-top: 10px; font-weight: bold; }
     
     #player-count { 
-      position: absolute; top: 15px; right: 20px; 
-      font-size: 1.2em; color: var(--hazard-yellow); 
-      font-weight: bold; text-shadow: 0 0 5px rgba(255, 215, 0, 0.3);
-      border: 1px solid var(--hazard-yellow); padding: 5px 10px;
-      background: rgba(0,0,0,0.5);
+      position: absolute; top: 15px; right: 20px; font-size: 1.2em; color: var(--hazard-yellow); font-weight: bold; 
+      border: 1px solid var(--hazard-yellow); padding: 5px 10px; background: rgba(0,0,0,0.5);
     }
 
     #cell-button { 
-      width: 220px; height: 220px; 
-      background: radial-gradient(circle, #1e3f20 0%, #000 80%); 
-      border-radius: 50%; 
-      border: 4px dashed var(--viral-green); 
-      box-shadow: 0 0 30px rgba(63, 185, 80, 0.3), inset 0 0 50px rgba(0,0,0,1); 
-      cursor: pointer; transition: transform 0.05s, filter 0.2s; 
-      position: relative; z-index: 25; overflow: hidden;
+      width: 220px; height: 220px; background: radial-gradient(circle, #1e3f20 0%, #000 80%); border-radius: 50%; border: 4px dashed var(--viral-green); 
+      box-shadow: 0 0 30px rgba(63, 185, 80, 0.3), inset 0 0 50px rgba(0,0,0,1); cursor: pointer; transition: transform 0.05s, filter 0.2s; position: relative; z-index: 25; overflow: hidden;
     }
     #cell-button:hover { border-color: #fff; box-shadow: 0 0 50px var(--viral-green); }
     #cell-button:active { transform: scale(0.95); }
@@ -218,12 +134,7 @@
     .ripple { position: absolute; border-radius: 50%; background: rgba(63, 185, 80, 0.8); transform: scale(0); animation: rippleAnim 0.6s linear; pointer-events: none; }
     @keyframes rippleAnim { to { transform: scale(2.5); opacity: 0; } }
 
-    #click-info { 
-      margin-top: 15px; color: var(--text-color); font-size: 1.4em; 
-      text-align: center; font-weight: bold; 
-      text-shadow: 0 0 5px var(--viral-green);
-    }
-
+    #click-info { margin-top: 15px; color: var(--text-color); font-size: 1.4em; text-align: center; font-weight: bold; text-shadow: 0 0 5px var(--viral-green); }
     .float-text { position: absolute; color: #fff; font-weight: bold; font-size: 1.4em; pointer-events: none; animation: floatUp 0.8s forwards; text-shadow: 0 0 5px #000; z-index: 1000; }
     @keyframes floatUp { 0% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-60px) scale(1.3); } }
 
@@ -235,39 +146,14 @@
     .buy-particle { position: absolute; width: 8px; height: 8px; background: var(--hazard-yellow); box-shadow: 0 0 6px var(--hazard-yellow); border-radius: 50%; pointer-events: none; z-index: 9999; animation: buyExplosion 0.8s ease-out forwards; }
     @keyframes buyExplosion { 0% { opacity: 1; transform: translate(0, 0) scale(1); } 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) scale(0.5); } }
 
-    .bonus-mutation { position: absolute; font-size: 4em; cursor: pointer; filter: drop-shadow(0 0 10px var(--error-color)); animation: pulseBonus 0.5s infinite alternate, popIn 0.3s ease-out; z-index: 1000; user-select: none; }
-    @keyframes pulseBonus { 0% { transform: scale(1); } 100% { transform: scale(1.1); } }
-    @keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1); } }
-
-    /* --- TITRES SECTION MAGASIN (STYLE PAR DÉFAUT) --- */
-    h2 { 
-      color: #000; 
-      background: var(--hazard-yellow);
-      margin-bottom: 15px; margin-top: 10px; padding: 5px 10px; 
-      border-left: none; border-bottom: 2px solid #000;
-      font-weight: bold; text-transform: uppercase;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
-    }
-    
-    /* --- ITEMS MAGASIN --- */
+    /* --- MAGASIN STYLES --- */
+    h2 { color: #000; background: var(--hazard-yellow); margin-bottom: 15px; margin-top: 10px; padding: 5px 10px; border-left: none; border-bottom: 2px solid #000; font-weight: bold; text-transform: uppercase; box-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
     .store-item { 
-        background-color: rgba(20, 20, 20, 0.8); 
-        border: 1px solid #333; 
-        border-left: 3px solid #333;
-        border-radius: 0; 
-        padding: 12px; cursor: pointer; display: none; 
-        justify-content: space-between; align-items: center; 
-        transition: all 0.2s;
+        background-color: rgba(20, 20, 20, 0.8); border: 1px solid #333; border-left: 3px solid #333; border-radius: 0; padding: 12px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s;
     }
-    .store-item.revealed { display: flex; animation: fadeIn 0.5s; }
-    .store-item:hover { 
-        background-color: #000; 
-        border-color: var(--hazard-yellow); 
-        border-left: 5px solid var(--hazard-yellow);
-        transform: translateX(5px); 
-        box-shadow: -5px 0 15px rgba(255, 215, 0, 0.2);
-    }
-    .store-item.purchased-anim { animation: flashGreen 0.3s; } .store-item.error-anim { animation: shakeRed 0.3s; }
+    .store-item:hover { background-color: #000; border-color: var(--hazard-yellow); border-left: 5px solid var(--hazard-yellow); transform: translateX(5px); box-shadow: -5px 0 15px rgba(255, 215, 0, 0.2); }
+    .store-item.purchased-anim { animation: flashGreen 0.3s; } 
+    .store-item.error-anim { animation: shakeRed 0.3s; }
     
     .item-info h3 { font-size: 1em; color: var(--hazard-yellow); margin-bottom: 2px; } 
     .item-desc { font-size: 0.8em; color: #888; font-style: normal; } 
@@ -276,99 +162,26 @@
     .item-cost { display: block; font-size: 1em; color: #fff; font-weight: bold; } 
     .item-count { display: block; font-size: 1.4em; color: var(--hazard-yellow); font-weight: bold; margin-top: 2px; }
 
-    /* --- BOOSTS --- */
-    #boost-area { 
-        background: #000; border: 1px solid var(--border-color); border-radius: 0; 
-        padding: 15px; min-height: 80px; margin-bottom: 25px; 
-        display: flex; flex-direction: column; gap: 10px;
-        position: relative;
-    }
-    #boost-area::before {
-        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-        background: repeating-linear-gradient(90deg, var(--hazard-yellow), var(--hazard-yellow) 10px, #000 10px, #000 20px);
-    }
-    #boost-area h3 {
-        font-size: 1.1em; color: var(--hazard-yellow); margin-bottom: 5px; border: none; padding-bottom: 0;
-        background: transparent; box-shadow: none; /* Override du style global h2 */
-    }
-    #boost-container { display: flex; flex-wrap: wrap; gap: 8px; }
-    .boost-item { 
-        width: 45px; height: 45px; background: #111; border: 1px solid var(--hazard-yellow); 
-        border-radius: 0; display: flex; align-items: center; justify-content: center; 
-        font-size: 1.5em; cursor: pointer; transition: transform 0.2s; flex-shrink: 0; 
-        color: var(--hazard-yellow);
-    }
-    .boost-item:hover { transform: scale(1.1); background: var(--hazard-yellow); color: #000; box-shadow: 0 0 10px var(--hazard-yellow); }
-
-    /* --- PRESTIGE --- */
-    #prestige-area { display: none; background: #1a0500; border: 1px solid var(--prestige-color); padding: 10px; text-align: center; margin-bottom: 15px; }
-    #prestige-area h3 { color: var(--prestige-color); background: transparent; box-shadow: none; }
-    .prestige-btn { 
-        background: transparent; color: var(--prestige-color); 
-        border: 1px solid var(--prestige-color); 
-        padding: 8px; width: 100%; border-radius: 0; 
-        cursor: pointer; font-weight: bold; margin-top: 5px; font-family: inherit; 
-        text-transform: uppercase;
-    }
-    .prestige-btn:hover { background: var(--prestige-color); color: #000; box-shadow: 0 0 15px var(--prestige-color); } 
-    .prestige-btn.secondary { border-color: var(--hazard-yellow); color: var(--hazard-yellow); }
-    .prestige-btn.secondary:hover { background: var(--hazard-yellow); color: #000; box-shadow: 0 0 15px var(--hazard-yellow); }
-
-    /* --- MODALES COMMUNES (Settings, Stats, Meta) --- */
-    .modal-backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 5000; justify-content: center; align-items: center; }
-    .modal-content { width: 600px; max-width: 95%; max-height: 80vh; background: #0d1117; border: 2px solid var(--hazard-yellow); border-radius: 0; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(255, 215, 0, 0.2); }
-    .modal-header { padding: 15px; border-bottom: 2px solid var(--hazard-yellow); text-align: center; background: repeating-linear-gradient(45deg, #111, #111 10px, #222 10px, #222 20px); }
-    .modal-header h2 { color: var(--hazard-yellow); background: none; border: none; box-shadow: none; padding: 0; margin: 0; font-size: 1.5em; }
-    .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-    
-    .close-btn { margin-top: 10px; padding: 12px; background: var(--hazard-yellow); border: none; color: #000; font-weight: bold; font-family: inherit; cursor: pointer; text-transform: uppercase; width: 100%; }
-    .close-btn:hover { background: #fff; }
-
-    /* --- CONTENU SPECIFIQUE MODALES --- */
-    .p-upgrade { background: #111; border: 1px solid #333; padding: 10px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-    .p-upgrade:hover { border-color: var(--hazard-yellow); background: #222; }
-    .p-upgrade.purchased { border-color: var(--viral-green); opacity: 0.6; }
-    .p-upgrade h4 { color: #fff; } .p-upgrade .cost { color: var(--hazard-yellow); font-weight: bold; }
-
     /* --- TOOLTIP --- */
-    #tooltip { 
-        display: none; position: absolute; background: rgba(0,0,0,0.95); 
-        border: 1px solid var(--hazard-yellow); padding: 10px; width: 250px; 
-        z-index: 999999; pointer-events: none; box-shadow: 0 5px 20px #000; 
-    }
+    #tooltip { display: none; position: absolute; background: rgba(0,0,0,0.95); border: 1px solid var(--hazard-yellow); padding: 10px; width: 250px; z-index: 999999; pointer-events: none; box-shadow: 0 5px 20px #000; }
     #tooltip h4 { color: var(--hazard-yellow); margin-bottom: 5px; text-transform: uppercase; border-bottom: 1px dashed #555; padding-bottom: 5px; } 
     #tooltip .cost { color: #fff; font-weight: bold; margin-bottom: 5px; } 
     #tooltip .desc { color: #aaa; font-size: 0.9em; } 
     #tooltip .stats { margin-top: 5px; border-top: 1px solid #333; padding-top: 5px; font-size: 0.85em; color: var(--viral-green); }
 
     /* --- CHAT --- */
-    #chat-container { 
-        position: absolute; bottom: 10px; left: 10px; width: 320px; height: 230px; 
-        background: rgba(0, 0, 0, 0.9); border: 1px solid var(--border-color); 
-        border-radius: 0; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; 
-    }
-    #chat-header { 
-        padding: 5px; border-bottom: 1px solid var(--border-color); 
-        background: var(--hazard-yellow); color: #000; 
-        font-size: 0.9em; font-weight: bold; text-transform: uppercase;
-    }
+    #chat-container { position: absolute; bottom: 10px; left: 10px; width: 320px; height: 230px; background: rgba(0, 0, 0, 0.9); border: 1px solid var(--border-color); border-radius: 0; display: flex; flex-direction: column; z-index: 100; pointer-events: auto; }
+    #chat-header { padding: 5px; border-bottom: 1px solid var(--border-color); background: var(--hazard-yellow); color: #000; font-size: 0.9em; font-weight: bold; text-transform: uppercase; }
     #chat-messages { flex-grow: 1; overflow-y: auto; padding: 8px; font-size: 0.85em; display: flex; flex-direction: column; gap: 4px; scrollbar-width: thin; scrollbar-color: var(--hazard-yellow) #000; }
     .msg { word-wrap: break-word; border-left: 2px solid #333; padding-left: 5px; } 
     .msg-user { color: var(--hazard-yellow); font-weight: bold; } 
     .msg-text { color: #ddd; } 
-    .msg-system { color: var(--error-color); font-style: italic; }
     #chat-form { display: flex; border-top: 1px solid var(--border-color); }
     #chat-input { flex-grow: 1; background: #111; border: none; padding: 8px; color: var(--hazard-yellow); font-family: inherit; outline: none; }
     #chat-btn { background: #222; border: none; border-left: 1px solid var(--border-color); color: var(--hazard-yellow); padding: 0 10px; cursor: pointer; font-family: inherit; }
-    #chat-btn:hover { background: var(--hazard-yellow); color: #000; }
-    #chat-btn:disabled { cursor: not-allowed; opacity: 0.5; }
 
     /* --- LEADERBOARD --- */
-    #leaderboard-panel { 
-        position: absolute; top: 80px; left: 20px; width: 200px; 
-        background: rgba(0, 0, 0, 0.8); border: 1px solid var(--hazard-yellow); 
-        border-radius: 0; padding: 10px; z-index: 50; pointer-events: none; 
-    }
+    #leaderboard-panel { position: absolute; top: 80px; left: 20px; width: 200px; background: rgba(0, 0, 0, 0.8); border: 1px solid var(--hazard-yellow); border-radius: 0; padding: 10px; z-index: 50; pointer-events: none; }
     #leaderboard-panel h3 { font-size: 1em; color: var(--hazard-yellow); margin-bottom: 5px; text-align: center; border-bottom: 1px dashed #333; padding-bottom: 5px; background: transparent; box-shadow: none; }
     #leaderboard-list { list-style: none; padding: 0; margin: 0; font-size: 0.85em; }
     #leaderboard-list li { display: flex; justify-content: space-between; padding: 2px 0; border-bottom: 1px solid #222; }
@@ -376,79 +189,39 @@
 
     @keyframes flashGreen { 0% { background-color: var(--viral-green); } 100% { background-color: rgba(20, 20, 20, 0.8); } } 
     @keyframes shakeRed { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); border-color: var(--error-color); } 75% { transform: translateX(5px); } 100% { transform: translateX(0); } }
-    .blink-cursor::after { content: '█'; animation: blink 1s infinite; margin-left: 5px; color: var(--hazard-yellow); }
-    @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-
-    /* --- NOUVEAUX BOUTONS HUD (BIOHAZARD STYLE) --- */
-    .hud-btn {
-      position: absolute;
-      top: 15px;
-      width: 45px; height: 45px;
-      background: #000;
-      border: 1px solid var(--hazard-yellow);
-      display: flex; justify-content: center; align-items: center;
-      cursor: pointer; z-index: 100;
-      box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
-      transition: all 0.2s ease;
-    }
-    /* Positionnement horizontal */
-    #settings-btn { left: 15px; }
-    #stats-btn { left: 70px; }
-
-    /* Styles des icônes SVG */
-    .hud-btn svg {
-        width: 24px; height: 24px;
-        fill: var(--hazard-yellow);
-        filter: drop-shadow(0 0 2px var(--hazard-yellow));
-        transition: all 0.3s;
-    }
-
-    /* Effets de survol */
-    .hud-btn:hover {
-        border-color: var(--viral-green);
-        box-shadow: 0 0 15px var(--viral-green);
-    }
-    .hud-btn:hover svg {
-        fill: var(--viral-green);
-        filter: drop-shadow(0 0 5px var(--viral-green));
-    }
     
-    /* Animation spécifique au survol */
-    #settings-btn:hover svg { transform: rotate(90deg); }
-    #stats-btn:hover svg { transform: scale(1.2); }
-
-    /* --- STYLES PARAMÈTRES & STATS --- */
-    .setting-row, .stat-row {
-      display: flex; justify-content: space-between; align-items: center;
-      font-size: 1.1em; color: #aaffaa; padding: 5px 0; border-bottom: 1px solid #222;
-    }
-    .stat-row span:last-child { font-weight: bold; color: var(--viral-green); }
-    .stat-group { margin-bottom: 15px; }
-    .stat-group h3 { font-size: 0.9em; color: #888; text-transform: uppercase; border-bottom: 1px dashed #444; margin-bottom: 5px; }
-
-    .setting-toggle {
-      background: transparent; border: 1px solid var(--viral-green);
-      color: var(--viral-green); padding: 5px 15px; cursor: pointer;
-      font-family: inherit; font-weight: bold; min-width: 60px;
-    }
-    .setting-toggle.off { border-color: #555; color: #555; }
-    .setting-toggle:hover { background: var(--viral-green); color: #000; box-shadow: 0 0 10px var(--viral-green); }
-    .setting-toggle.off:hover { background: #555; color: #fff; box-shadow: none; }
-    .setting-toggle.danger { border-color: var(--error-color); color: var(--error-color); }
-    .setting-toggle.danger:hover { background: var(--error-color); color: #fff; box-shadow: 0 0 15px var(--error-color); }
-
+    /* --- HUD BUTTONS (Settings) --- */
+    .hud-btn { position: absolute; top: 15px; width: 45px; height: 45px; background: #000; border: 1px solid var(--hazard-yellow); display: flex; justify-content: center; align-items: center; cursor: pointer; z-index: 100; box-shadow: 0 0 10px rgba(255, 215, 0, 0.1); transition: all 0.2s ease; }
+    #settings-btn { left: 15px; }
+    .hud-btn:hover { border-color: var(--viral-green); box-shadow: 0 0 15px var(--viral-green); }
+    .hud-btn svg { width: 24px; height: 24px; fill: var(--hazard-yellow); }
+    .hud-btn:hover svg { fill: var(--viral-green); }
+    
+    #bio-canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0.3; }
   </style>
 </head>
 <body>
   <div id="global-crt"></div>
 
   <div id="login-overlay">
-    <div id="login-box"><h2>IDENTIFICATION REQUISE</h2><p style="color: #aaa; margin-bottom: 20px;">Accès au Laboratoire</p><form id="login-form"><input type="text" id="login-input" placeholder="Votre Nom de Code" maxlength="15" autocomplete="off"><br><button type="submit" id="login-btn">ACCÉDER</button></form></div>
+    <div id="login-box">
+      <h2>IDENTIFICATION REQUISE</h2>
+      <p style="color: #aaa; margin-bottom: 20px;">Accès au Laboratoire</p>
+      <div id="login-error"></div>
+      <form id="auth-form">
+        <input type="text" id="username" class="auth-input" placeholder="Nom de Code" required autocomplete="off">
+        <input type="password" id="password" class="auth-input" placeholder="Mot de passe" required>
+        <div style="display:flex; justify-content: space-between; gap:10px;">
+            <button type="submit" class="auth-btn">CONNEXION</button>
+            <button type="button" id="btn-register" class="auth-btn secondary">CRÉER</button>
+        </div>
+      </form>
+    </div>
   </div>
 
   <div id="context-overlay">
     <div id="context-box">
-      <h2 class="blink-cursor">☣_ TRANSMISSION SÉCURISÉE</h2>
+      <h2>☣_ TRANSMISSION SÉCURISÉE</h2>
       <div id="context-text"></div>
       <button id="start-mission-btn">ACCEPTER LE PROTOCOLE</button>
     </div>
@@ -459,16 +232,8 @@
   <div id="passive-particle-container"></div>
   <div class="container">
     <div id="game-area">
-      <div id="settings-btn" class="hud-btn">
-        <svg viewBox="0 0 24 24">
-            <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
-        </svg>
-      </div>
-      
-      <div id="stats-btn" class="hud-btn">
-         <svg viewBox="0 0 24 24">
-             <path d="M19,3H5C3.9,3,3,3.9,3,5v14c0,1.1,0.9,2,2,2h14c1.1,0,2-0.9,2-2V5C21,3.9,20.1,3,19,3z M9,17H7v-7h2V17z M13,17h-2V7h2V17z M17,17h-2v-4h2V17z"/>
-         </svg>
+      <div id="settings-btn" class="hud-btn" onclick="if(confirm('Se déconnecter ?')) logout();" title="Déconnexion">
+        <svg viewBox="0 0 24 24"><path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5a2 2 0 0 0-2 2v4h2V5h14v14H5v-4H3v4a2 2 0 0 0 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/></svg>
       </div>
       
       <h1>☣ Projet : Genèse ☣</h1><div id="player-count">SCIENTIFIQUES : 0</div>
@@ -476,150 +241,43 @@
       <div id="leaderboard-panel"><h3>Top Contagion</h3><ul id="leaderboard-list"></ul></div>
       <div id="cell-button"></div><div id="click-info">PUISSANCE: +1</div> 
       <div id="particle-container"></div>
-      <div id="chat-container"><div id="chat-header">ID: <span id="current-username-display">Anonyme</span></div><div id="chat-messages"><div class="msg"><span class="msg-user">SYSTÈME:</span> <span class="msg-text">Connexion établie.</span></div></div><form id="chat-form"><input type="text" id="chat-input" placeholder="50 clics requis..." autocomplete="off"><button type="submit" id="chat-btn">></button></form></div>
-      
-      <div id="signature">By Swapeur</div>
+      <div id="chat-container"><div id="chat-header">ID: <span id="current-username-display">Anonyme</span></div><div id="chat-messages"><div class="msg"><span class="msg-user">SYSTÈME:</span> <span class="msg-text">Connexion établie.</span></div></div><form id="chat-form"><input type="text" id="chat-input" placeholder="Message..." autocomplete="off"><button type="submit" id="chat-btn">></button></form></div>
       
     </div>
     <div id="store-area">
-      <div id="prestige-area"><h3>RECHERCHE AVANCÉE</h3><p>+<span id="p-gain">0</span> PR au reset</p><p>Total: <span id="p-total">0</span> PR</p><button class="prestige-btn secondary" id="btn-meta">Méta-Recherche (🧠)</button><button class="prestige-btn" id="btn-reset">MUTATION GLOBALE</button></div>
-      <div id="boost-area"><h3>RECHERCHE</h3><div id="boost-container"></div></div>
       <h2>AMÉLIORATIONS</h2>
       
-      <div class="store-item revealed" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Tiens ? Un troisième bras a poussé.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
-      
+      <div class="store-item" id="b-mutation"><div class="item-info"><h3>Mutation Mineure</h3><p class="item-desc">Tiens ? Un troisième bras a poussé.</p><p class="item-gain">+0.1 CI/s</p></div><div class="item-stats"><span class="item-cost">15</span><span class="item-count">0</span></div></div>
       <div class="store-item" id="b-oiseau"><div class="item-info"><h3>Vecteur Oiseau</h3><p class="item-desc">Roucoule, tousse, propage, répète.</p><p class="item-gain">+1 CI/s</p></div><div class="item-stats"><span class="item-cost">100</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-eau"><div class="item-info"><h3>Contamination Eau</h3><p class="item-desc">Enrichie en minéraux et en pathogènes.</p><p class="item-gain">+8 CI/s</p></div><div class="item-stats"><span class="item-cost">1100</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-aerosol"><div class="item-info"><h3>Transmission Aérosol</h3><p class="item-desc">L'amour est dans l'air. La mort aussi.</p><p class="item-gain">+47 CI/s</p></div><div class="item-stats"><span class="item-cost">12000</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-aeroport"><div class="item-info"><h3>Aéroport International</h3><p class="item-desc">Tour du monde en 80 fièvres.</p><p class="item-gain">+260 CI/s</p></div><div class="item-stats"><span class="item-cost">130000</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-ferme"><div class="item-info"><h3>Fermes Virales</h3><p class="item-desc">Élevé en plein air, mort en plein air.</p><p class="item-gain">+2k CI/s</p></div><div class="item-stats"><span class="item-cost">500000</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-centre"><div class="item-info"><h3>Centres de Contagion</h3><p class="item-desc">La promiscuité, c'est l'avenir de l'espèce.</p><p class="item-gain">+15k CI/s</p></div><div class="item-stats"><span class="item-cost">5M</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-propagande"><div class="item-info"><h3>Propagande Virale</h3><p class="item-desc">"Ne paniquez pas, c'est juste une allergie."</p><p class="item-gain">+100k CI/s</p></div><div class="item-stats"><span class="item-cost">50M</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-satellite"><div class="item-info"><h3>Satellite de Dispersion</h3><p class="item-desc">Prévisions météo : averses de spores.</p><p class="item-gain">+1.2M CI/s</p></div><div class="item-stats"><span class="item-cost">600M</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-clonage"><div class="item-info"><h3>Clonage Humain</h3><p class="item-desc">On ne manque plus de volontaires pour les tests.</p><p class="item-gain">+20M CI/s</p></div><div class="item-stats"><span class="item-cost">7.5Md</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-terraformation"><div class="item-info"><h3>Terraformation Virale</h3><p class="item-desc">Une planète verte... de pus et de nécrose.</p><p class="item-gain">+350M CI/s</p></div><div class="item-stats"><span class="item-cost">95Md</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-singularite"><div class="item-info"><h3>Singularité Biologique</h3><p class="item-desc">Toute la biomasse fusionnée en une seule entité.</p><p class="item-gain">+8Md CI/s</p></div><div class="item-stats"><span class="item-cost">1.5Tn</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-echo"><div class="item-info"><h3>Échos Dimensionnels</h3><p class="item-desc">La membrane de la réalité commence à tousser.</p><p class="item-gain">+50Md CI/s</p></div><div class="item-stats"><span class="item-cost">10Tn</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-nano"><div class="item-info"><h3>Nanobots</h3><p class="item-desc">Des virus synthétiques qui n'arrêtent jamais.</p><p class="item-gain">+1.5Tn CI/s</p></div><div class="item-stats"><span class="item-cost">250Tn</span><span class="item-count">0</span></div></div>
-      
       <div class="store-item" id="b-nova"><div class="item-info"><h3>Supernova Virale</h3><p class="item-desc">L'univers entier est notre boîte de Petri.</p><p class="item-gain">+100Qa CI/s</p></div><div class="item-stats"><span class="item-cost">8Qa</span><span class="item-count">0</span></div></div>
 
     </div>
   </div>
   <div id="tooltip"></div>
-  
-  <div id="modal-backdrop" class="modal-backdrop"><div id="modal" class="modal-content"><div class="modal-header"><h2>Méta-Recherche</h2><p>Améliorations permanentes</p></div><div id="modal-body" class="modal-body"></div><button class="close-btn" onclick="document.getElementById('modal-backdrop').style.display='none'">Fermer</button></div></div>
-
-  <div id="settings-modal-backdrop" class="modal-backdrop">
-    <div id="settings-modal" class="modal-content" style="width: 400px;">
-      <div class="modal-header">
-        <h2>CONFIGURATION SYSTÈME</h2>
-      </div>
-      <div class="modal-body">
-        <div class="setting-row">
-          <span>AUDIO (SFX)</span>
-          <button id="toggle-audio" class="setting-toggle">ON</button>
-        </div>
-        <div class="setting-row">
-          <span>FILTRE CRT (Scanlines)</span>
-          <button id="toggle-crt" class="setting-toggle">ON</button>
-        </div>
-        <div class="setting-row">
-          <span>PARTICULES (Performance)</span>
-          <button id="toggle-particles" class="setting-toggle">ON</button>
-        </div>
-        <hr style="border: 0; border-top: 1px dashed #333; margin: 10px 0;">
-        <div class="setting-row">
-          <span>ID SESSION</span>
-          <button id="btn-logout" class="setting-toggle danger">DÉCONNEXION</button>
-        </div>
-        <button id="close-settings" class="close-btn">APPLIQUER & FERMER</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="stats-modal-backdrop" class="modal-backdrop">
-    <div id="stats-modal" class="modal-content">
-      <div class="modal-header">
-        <h2>DONNÉES ÉPIDÉMIOLOGIQUES</h2>
-        <p>Rapport d'analyse global</p>
-      </div>
-      <div class="modal-body" id="stats-body">
-        <div class="stat-group">
-          <h3>Statistiques Globales (Monde)</h3>
-          <div class="stat-row"><span>Total Infecté (Depuis toujours)</span> <span id="stat-total-ever">0</span></div>
-          <div class="stat-row"><span>Total Clicks (Tous joueurs)</span> <span id="stat-total-clicks">0</span></div>
-          <div class="stat-row"><span>Boosts Découverts</span> <span id="stat-boosts-unlocked">0</span></div>
-          <div class="stat-row"><span>Points de Prestige (PR)</span> <span id="stat-prestige">0</span></div>
-        </div>
-        
-        <div class="stat-group">
-          <h3>Session Locale (Vous)</h3>
-          <div class="stat-row"><span>Stock Actuel</span> <span id="stat-current-score">0</span></div>
-          <div class="stat-row"><span>Production Actuelle</span> <span id="stat-current-cps">0 CI/s</span></div>
-          <div class="stat-row"><span>Clics cette session</span> <span id="stat-local-clicks">0</span></div>
-          <div class="stat-row"><span>Temps de session</span> <span id="stat-session-time">00:00</span></div>
-        </div>
-        <button class="close-btn" onclick="document.getElementById('stats-modal-backdrop').style.display='none'">Fermer le Rapport</button>
-      </div>
-    </div>
-  </div>
 
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    let deviceId = localStorage.getItem('viral_device_id');
-    if (!deviceId) {
-      deviceId = 'id_' + Math.random().toString(36).substr(2, 9) + Date.now();
-      localStorage.setItem('viral_device_id', deviceId);
-    }
-
-    const socket = io({ auth: { token: deviceId } });
-
     // --- VARIABLES SESSION ---
-    let mySessionClicks = 0;
+    let socket = null;
     const sessionStartTime = Date.now();
+    let lastState = null;
 
-    // --- GESTION DES PARAMÈTRES ---
-    const defaultSettings = { audio: true, crt: true, particles: true };
-    let userSettings = JSON.parse(localStorage.getItem('viral_settings')) || defaultSettings;
-
-    function saveSettings() {
-      localStorage.setItem('viral_settings', JSON.stringify(userSettings));
-      applySettings();
-    }
-
-    function applySettings() {
-      const crtEl = document.getElementById('global-crt');
-      if (crtEl) crtEl.style.display = userSettings.crt ? 'block' : 'none';
-      
-      updateBtnState('toggle-audio', userSettings.audio);
-      updateBtnState('toggle-crt', userSettings.crt);
-      updateBtnState('toggle-particles', userSettings.particles);
-    }
-
-    function updateBtnState(id, state) {
-      const btn = document.getElementById(id);
-      if(!btn) return;
-      btn.innerText = state ? 'ON' : 'OFF';
-      btn.className = state ? 'setting-toggle' : 'setting-toggle off';
-    }
-    
+    // --- AUDIO SYSTEM (Original Restored) ---
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     const Sound = {
       click: () => { 
-        if (!userSettings.audio) return;
         if(audioCtx.state === 'suspended') audioCtx.resume(); 
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
         osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
@@ -630,7 +288,6 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.15); 
       },
       buy: () => { 
-        if (!userSettings.audio) return;
         if(audioCtx.state === 'suspended') audioCtx.resume(); 
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
         osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'triangle'; 
@@ -641,7 +298,6 @@
         osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
       },
       chat: () => { 
-        if (!userSettings.audio) return;
         if(audioCtx.state === 'suspended') audioCtx.resume(); 
         const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
         osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
@@ -649,529 +305,209 @@
         gain.gain.setValueAtTime(0.05, audioCtx.currentTime); 
         gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); 
         osc.start(); osc.stop(audioCtx.currentTime + 0.1); 
-      },
-      bonus: () => { 
-        if (!userSettings.audio) return;
-        if(audioCtx.state === 'suspended') audioCtx.resume(); 
-        const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain(); 
-        osc.connect(gain); gain.connect(audioCtx.destination); osc.type = 'sine'; 
-        osc.frequency.setValueAtTime(600, audioCtx.currentTime); 
-        osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.3); 
-        gain.gain.setValueAtTime(0.2, audioCtx.currentTime); 
-        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); 
-        osc.start(); osc.stop(audioCtx.currentTime + 0.3); 
       }
     };
 
-    let lastState = null; let lastUpdate = Date.now(); let currentScore = 0; let currentClickValue = 1;
-    const scoreEl = document.getElementById('scoreDisplay'); const cellBtn = document.getElementById('cell-button'); const tooltip = document.getElementById('tooltip'); const partCont = document.getElementById('particle-container'); const passPartCont = document.getElementById('passive-particle-container'); const storeEl = document.getElementById('store-area'); const leaderboardList = document.getElementById('leaderboard-list');
+    // --- AUTHENTIFICATION (Injection) ---
+    const loginOverlay = document.getElementById('login-overlay');
+    const authForm = document.getElementById('auth-form');
+    const errorDiv = document.getElementById('login-error');
     
-    function formatNumber(num) { 
-      if (num < 1000) return parseFloat(num.toFixed(1));
-      if (num < 1000000) return parseFloat((num / 1000).toFixed(2)) + 'k'; 
-      if (num < 1000000000) return parseFloat((num / 1000000).toFixed(2)) + 'M'; 
-      if (num < 1000000000000) return parseFloat((num / 1000000000).toFixed(2)) + 'Md'; 
-      if (num < 1000000000000000) return parseFloat((num / 1000000000000).toFixed(2)) + 'Tn'; 
-      if (num < 1000000000000000000) return parseFloat((num / 1000000000000000).toFixed(2)) + 'Qa'; 
-      return parseFloat((num / 1000000000000000000).toFixed(2)) + 'Qi'; 
-    }
+    const savedToken = localStorage.getItem('viral_token');
+    if(savedToken) attemptConnection(savedToken);
 
-    function formatTime(ms) {
-      const seconds = Math.floor((ms / 1000) % 60);
-      const minutes = Math.floor((ms / (1000 * 60)) % 60);
-      const hours = Math.floor((ms / (1000 * 60 * 60)));
-      return `${hours}h ${minutes}m ${seconds}s`;
-    }
+    document.getElementById('btn-register').onclick = () => doAuth('/api/register');
+    authForm.onsubmit = (e) => { e.preventDefault(); doAuth('/api/login'); };
 
-    const loginOverlay = document.getElementById('login-overlay'); const loginForm = document.getElementById('login-form'); const loginInput = document.getElementById('login-input'); const currentUsernameDisplay = document.getElementById('current-username-display');
-    
-    const contextOverlay = document.getElementById('context-overlay');
-    const contextTextDiv = document.getElementById('context-text');
-    const startMissionBtn = document.getElementById('start-mission-btn');
-
-    const BRIEFING_TEXT = 
-`IDENTIFICATION CONFIRMÉE.
-
-Bienvenue dans le Projet Genèse, Scientifique.
-
-Votre mission est simple : cultiver la souche primitive. 
-
-Nous ignorons encore ses capacités, mais les premières simulations indiquent un potentiel de croissance exponentiel.
-
-
-Ne vous posez pas de questions sur l'origine des échantillons.
-
-Ne vous inquiétez pas des effets secondaires.
-
-Concentrez-vous sur la production.
-
-
-Le monde est prêt pour la prochaine étape de l'évolution.
-
-À vous de jouer.
-
-
-TERMINE.`;
-
-    if(localStorage.getItem('viral_username')) loginInput.value = localStorage.getItem('viral_username');
-
-    loginForm.onsubmit = (e) => { 
-        e.preventDefault(); 
-        const name = loginInput.value.trim(); 
-        if(name.length > 0) { 
-            if(userSettings.audio && audioCtx.state === 'suspended') audioCtx.resume(); 
-            socket.emit('set_username', name); 
-            currentUsernameDisplay.innerText = name; 
-            localStorage.setItem('viral_username', name); 
-            
-            loginOverlay.style.display = 'none'; 
-            launchContextSequence(); 
-        } else { 
-            loginInput.style.borderColor = "var(--error-color)"; 
-            setTimeout(() => loginInput.style.borderColor = "var(--hazard-yellow)", 300); 
-        } 
-    };
-    
-    function launchContextSequence() {
-        contextOverlay.style.display = 'flex';
-        let i = 0;
-        const speed = 30; 
-
-        function typeWriter() {
-            if (i < BRIEFING_TEXT.length) {
-                contextTextDiv.textContent += BRIEFING_TEXT.charAt(i);
-                i++;
-                setTimeout(typeWriter, speed);
-            } else {
-                startMissionBtn.style.display = 'block';
-                startMissionBtn.classList.add('revealed');
-            }
-        }
-        typeWriter();
-    }
-
-    startMissionBtn.onclick = () => {
-        Sound.buy(); 
-        contextOverlay.style.opacity = '0';
-        contextOverlay.style.transition = 'opacity 1s ease';
-        setTimeout(() => {
-            contextOverlay.style.display = 'none';
-        }, 1000);
-    };
-    
-    const chatForm = document.getElementById('chat-form'); 
-    const chatInput = document.getElementById('chat-input'); 
-    const chatMsg = document.getElementById('chat-messages');
-    const chatBtn = document.getElementById('chat-btn');
-    
-    let lastChatTimestamp = 0;
-    let isPolling = false; 
-
-    chatForm.onsubmit = (e) => { 
-      e.preventDefault(); 
-      const txt = chatInput.value.trim(); 
-      const username = currentUsernameDisplay.innerText;
-
-      if(txt && !chatBtn.disabled) { 
-        chatBtn.disabled = true;
-        chatBtn.style.opacity = '0.5';
-        chatBtn.style.cursor = 'not-allowed';
-
-        fetch('/api/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user: username, text: txt })
-        })
-        .then(res => res.json())
-        .then(data => {
-          if(data.error) {
-             addMessageToChat('Système', `⛔ ${data.error}`, 'msg-system');
-             setTimeout(() => { chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer'; }, 500);
-          } else {
-            chatInput.value = ''; 
-            Sound.chat(); 
-            pollChat(); 
-            setTimeout(() => { chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer'; chatInput.focus(); }, 3000);
-          }
-        })
-        .catch(err => {
-            console.error("Erreur chat", err);
-            chatBtn.disabled = false; chatBtn.style.opacity = '1'; chatBtn.style.cursor = 'pointer';
-        });
-      } 
-    };
-
-    function pollChat() {
-      if (isPolling) return; 
-      isPolling = true;
-
-      fetch(`/api/chat?since=${lastChatTimestamp}`)
-        .then(res => res.json())
-        .then(messages => {
-          if (messages.length > 0) {
-            messages.forEach(msg => {
-              addMessageToChat(msg.user, msg.text, msg.user === 'Système' ? 'msg-system' : null, msg.id);
-              if(msg.timestamp > lastChatTimestamp) lastChatTimestamp = msg.timestamp;
+    async function doAuth(endpoint) {
+        const user = document.getElementById('username').value.trim();
+        const pass = document.getElementById('password').value.trim();
+        if(!user || !pass) return;
+        try {
+            const res = await fetch(endpoint, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username: user, password: pass})
             });
-            const myName = currentUsernameDisplay.innerText;
-            const lastMsg = messages[messages.length-1];
-            if(lastMsg.user !== myName && lastMsg.user !== 'Système') { Sound.chat(); }
-          }
-        })
-        .catch(err => console.error("Polling chat error", err))
-        .finally(() => { isPolling = false; });
-    }
-    
-    function addMessageToChat(user, text, specificClass, msgId) {
-      if (msgId && document.getElementById('msg-' + msgId)) return; 
-      const div = document.createElement('div'); 
-      div.className = 'msg'; 
-      if (msgId) div.id = 'msg-' + msgId;
-      let userClass = specificClass || 'msg-user';
-      div.innerHTML = `<span class="${userClass}">${user}:</span> <span class="msg-text">${text}</span>`; 
-      chatMsg.appendChild(div); 
-      
-      const isAtBottom = chatMsg.scrollHeight - chatMsg.scrollTop <= chatMsg.clientHeight + 100;
-      if(isAtBottom || user === currentUsernameDisplay.innerText) {
-           chatMsg.scrollTop = chatMsg.scrollHeight;
-      }
-    }
-    setInterval(pollChat, 2000);
-    
-    socket.on('spawn_bonus', (data) => {
-      const bonus = document.createElement('div');
-      bonus.className = 'bonus-mutation';
-      bonus.innerText = '☣️'; 
-      const x = Math.random() * (window.innerWidth - 100) + 50;
-      const y = Math.random() * (window.innerHeight - 100) + 50;
-      bonus.style.left = x + 'px';
-      bonus.style.top = y + 'px';
-      bonus.id = data.id; 
-      bonus.onclick = (e) => {
-        if(!e.isTrusted) return; 
-        socket.emit('click_bonus', data.id);
-        Sound.bonus();
-        bonus.remove(); 
-        spawnFloatingText(e, "MUTATION !");
-      };
-      document.body.appendChild(bonus);
-      setTimeout(() => { if(bonus.parentNode) bonus.remove(); }, 10000);
-    });
-
-    const builds = { 
-        'mutation_mineure': 'b-mutation', 'vecteur_oiseau': 'b-oiseau', 'contamination_eau': 'b-eau', 
-        'transmission_aerosol': 'b-aerosol', 'aeroport_international': 'b-aeroport', 'fermes_virales': 'b-ferme', 
-        'centres_contagion': 'b-centre', 'propagande_virale': 'b-propagande', 'satellite_dispersion': 'b-satellite', 
-        'clonage_humain': 'b-clonage', 'terraformation_virale': 'b-terraformation', 'singularite_biologique': 'b-singularite',
-        'echos_dimensionnels': 'b-echo', 'nanobots_autoreplicants': 'b-nano', 'supernova_virale': 'b-nova'
-    };
-
-    function showTip(e, title, cost, desc, gain, total) { let h = `<h4>${title}</h4><div class="cost">Coût: ${formatNumber(cost)} CI</div><div class="desc">${desc}</div>`; if(gain) h += `<div class="stats">Gain: ${formatNumber(gain)} CI/s<br>Total: ${formatNumber(total)} CI/s</div>`; tooltip.innerHTML = h; tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; tooltip.style.display = 'block'; }
-    function hideTip() { tooltip.style.display = 'none'; } function moveTip(e) { tooltip.style.left = (e.pageX+15)+'px'; tooltip.style.top = (e.pageY+15)+'px'; }
-    
-    function spawnBuyExplosion(x, y) {
-      if (!userSettings.particles) return;
-      const colors = ['#ffd700', '#fff', '#aaffaa']; 
-      for(let i=0; i<12; i++) {
-        const p = document.createElement('div');
-        p.className = 'buy-particle';
-        p.style.left = x + 'px';
-        p.style.top = y + 'px';
-        p.style.background = colors[Math.floor(Math.random()*colors.length)];
-        
-        const angle = Math.random() * Math.PI * 2;
-        const velocity = Math.random() * 60 + 30;
-        const tx = Math.cos(angle) * velocity;
-        const ty = Math.sin(angle) * velocity;
-        
-        p.style.setProperty('--tx', tx + 'px');
-        p.style.setProperty('--ty', ty + 'px');
-        
-        document.body.appendChild(p);
-        setTimeout(() => p.remove(), 800);
-      }
+            const data = await res.json();
+            if(data.error) errorDiv.innerText = "⚠️ " + data.error;
+            else {
+                localStorage.setItem('viral_token', data.token);
+                localStorage.setItem('viral_username', data.username);
+                attemptConnection(data.token);
+            }
+        } catch(e) { errorDiv.innerText = "Erreur serveur."; }
     }
 
-    for(let k in builds) { 
-        const el = document.getElementById(builds[k]); 
-        el.onclick = (e) => { 
-            if(!lastState) return; 
-            const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0); 
-            if(currentScore >= cost) { 
-                socket.emit('buy_upgrade', k); 
-                el.classList.add('purchased-anim'); 
-                setTimeout(()=>el.classList.remove('purchased-anim'),300); 
-                Sound.buy(); 
-                
-                let ex = e.clientX;
-                let ey = e.clientY;
-                if(!ex || !ey) {
-                    const r = el.getBoundingClientRect();
-                    ex = r.left + r.width/2;
-                    ey = r.top + r.height/2;
+    function attemptConnection(token) {
+        socket = io({ auth: { token: token } });
+        
+        socket.on("connect_error", () => { logout(); });
+        socket.on("connect", () => {
+            loginOverlay.style.display = 'none';
+            document.getElementById('current-username-display').innerText = localStorage.getItem('viral_username');
+            launchContextSequence();
+        });
+        
+        // LISTENERS JEU (Originaux rétablis)
+        socket.on('tick_update', (d) => { 
+            lastState = d; // Sync for animation loop
+            document.getElementById('scoreDisplay').innerText = Math.floor(d.score).toLocaleString(); 
+            document.getElementById('cps-display').innerText = '+' + Math.floor(d.cps).toLocaleString() + ' CI/s'; 
+            document.getElementById('player-count').innerText = 'SCIENTIFIQUES : ' + d.players;
+            document.getElementById('click-info').innerText = 'PUISSANCE: +' + Math.floor(d.clickValue).toLocaleString();
+            
+            const list = document.getElementById('leaderboard-list');
+            list.innerHTML = '';
+            d.leaderboard.forEach(p => {
+                const li = document.createElement('li');
+                li.innerHTML = `<span class="lb-name">${p.name}</span> <span class="lb-score">${Math.floor(p.contribution)}</span>`;
+                list.appendChild(li);
+            });
+        });
+
+        socket.on('full_update', (d) => {
+            const s = d.gameState;
+            lastState = { ...d, ...s }; // Merge for safety
+            
+            // UPDATE DES BOUTONS MAGASIN (Legacy IDs)
+            const updateBtn = (id, cost, count) => {
+                const el = document.getElementById(id);
+                if(el) {
+                    el.querySelector('.item-cost').innerText = Math.floor(cost).toLocaleString();
+                    el.querySelector('.item-count').innerText = count;
+                    if(s.totalInfectedCells >= cost) el.style.opacity = 1; else el.style.opacity = 0.5;
                 }
-                spawnBuyExplosion(ex, ey);
-            } else { 
-                el.classList.add('error-anim'); 
-                setTimeout(()=>el.classList.remove('error-anim'),300); 
-            } 
-        }; 
-        el.onmouseenter = (e) => { if(!lastState) return; let costKey = 'cost_' + k.split('_')[0].replace('vecteur','oiseau').replace('contamination','eau').replace('transmission','aerosol').replace('aeroport','aeroport').replace('fermes','ferme').replace('centres','centre').replace('propagande','propagande'); if(k.startsWith('satellite')) costKey = 'cost_satellite'; if(k.startsWith('clonage')) costKey = 'cost_clonage'; if(k.startsWith('terraformation')) costKey = 'cost_terraformation'; if(k.startsWith('singularite')) costKey = 'cost_singularite'; if(k.startsWith('echos')) costKey = 'cost_echo'; if(k.startsWith('nanobots')) costKey = 'cost_nano'; if(k.startsWith('supernova')) costKey = 'cost_nova'; const gainKey = costKey.replace('cost','gain'); const name = el.querySelector('h3').innerText; const desc = el.querySelector('.item-desc').innerText; const cost = parseFloat(el.querySelector('.item-cost').dataset.raw); const gain = parseFloat(el.querySelector('.item-gain').dataset.raw); let countKey = k; if(k=='mutation_mineure') countKey='mutations_mineures'; if(k=='vecteur_oiseau') countKey='vecteurs_oiseaux'; const count = lastState[countKey] || 0; showTip(e, name, cost, desc, gain, gain*count); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; 
-    }
-    
-    cellBtn.onclick = (e) => { 
-      if (!e.isTrusted) return; 
-      socket.emit('click_cell'); 
-      
-      // Session stats
-      mySessionClicks++;
-
-      const ripple = document.createElement('div');
-      ripple.className = 'ripple';
-      const rect = cellBtn.getBoundingClientRect();
-      const size = Math.max(rect.width, rect.height); 
-      ripple.style.width = ripple.style.height = size + 'px';
-      
-      let x = e.clientX - rect.left - size/2;
-      let y = e.clientY - rect.top - size/2;
-      if(e.clientX === 0 && e.clientY === 0) { x = -size/2 + rect.width/2; y = -size/2 + rect.height/2; }
-
-      ripple.style.left = x + 'px';
-      ripple.style.top = y + 'px';
-      cellBtn.appendChild(ripple);
-      setTimeout(() => ripple.remove(), 600);
-      
-      cellBtn.classList.add('clicked'); 
-      setTimeout(()=>cellBtn.classList.remove('clicked'),100); 
-      spawnParticle(cellBtn, 5); 
-      spawnFloatingText(e, currentClickValue); 
-      Sound.click(); 
-    };
-
-    function spawnFloatingText(e, amount) { 
-      const el = document.createElement('div'); 
-      el.className = 'float-text'; 
-      el.innerText = (typeof amount === 'string' ? '' : '+') + (typeof amount === 'number' ? formatNumber(amount) : amount); 
-      let x = e.clientX; let y = e.clientY; 
-      if(!x && !y) { const rect = cellBtn.getBoundingClientRect(); x = rect.left + rect.width/2; y = rect.top + rect.height/2; } 
-      x += (Math.random() - 0.5) * 30; 
-      el.style.left = x + 'px'; el.style.top = y + 'px'; 
-      document.body.appendChild(el); 
-      setTimeout(() => el.remove(), 800); 
+            };
+            
+            updateBtn('b-mutation', s.cost_mutation, s.mutations_mineures);
+            updateBtn('b-oiseau', s.cost_oiseau, s.vecteurs_oiseaux);
+            updateBtn('b-eau', s.cost_eau, s.contamination_eau);
+            updateBtn('b-aerosol', s.cost_aerosol, s.transmission_aerosol);
+            updateBtn('b-aeroport', s.cost_aeroport, s.aeroport_international);
+            updateBtn('b-ferme', s.cost_ferme, s.fermes_virales);
+            updateBtn('b-centre', s.cost_centre, s.centres_contagion);
+            updateBtn('b-propagande', s.cost_propagande, s.propagande_virale);
+            updateBtn('b-satellite', s.cost_satellite, s.satellite_dispersion);
+            updateBtn('b-clonage', s.cost_clonage, s.clonage_humain);
+            updateBtn('b-terraformation', s.cost_terraformation, s.terraformation_virale);
+            updateBtn('b-singularite', s.cost_singularite, s.singularite_biologique);
+            updateBtn('b-echo', s.cost_echo, s.echos_dimensionnels);
+            updateBtn('b-nano', s.cost_nano, s.nanobots_autoreplicants);
+            updateBtn('b-nova', s.cost_nova, s.supernova_virale);
+        });
     }
 
-    document.getElementById('btn-reset').onclick = () => { if(confirm('Prestige ? Reset complet vs PR.')) socket.emit('do_prestige'); }; document.getElementById('btn-meta').onclick = () => { document.getElementById('modal-backdrop').style.display = 'flex'; renderPrestigeShop(); }; document.getElementById('modal-backdrop').onclick = (e) => { if(e.target.id === 'modal-backdrop') e.target.style.display = 'none'; };
-
-    // LOGIQUE UI (Paramètres & Stats)
-    const settingsBtn = document.getElementById('settings-btn');
-    const settingsBackdrop = document.getElementById('settings-modal-backdrop');
-    const closeSettingsBtn = document.getElementById('close-settings');
-
-    settingsBtn.onclick = () => {
-      settingsBackdrop.style.display = 'flex';
-      applySettings();
-    };
-    closeSettingsBtn.onclick = () => { settingsBackdrop.style.display = 'none'; };
-
-    document.getElementById('toggle-audio').onclick = () => { userSettings.audio = !userSettings.audio; saveSettings(); };
-    document.getElementById('toggle-crt').onclick = () => { userSettings.crt = !userSettings.crt; saveSettings(); };
-    document.getElementById('toggle-particles').onclick = () => { userSettings.particles = !userSettings.particles; saveSettings(); };
-    document.getElementById('btn-logout').onclick = () => {
-      if(confirm("ATTENTION : Cela effacera votre identité locale. Si vous n'avez pas noté votre ID, la progression sera inaccessible. Continuer ?")) {
-        localStorage.removeItem('viral_device_id');
+    function logout() {
+        localStorage.removeItem('viral_token');
         localStorage.removeItem('viral_username');
         location.reload();
-      }
-    };
-    
-    // LOGIQUE STATS
-    const statsBtn = document.getElementById('stats-btn');
-    const statsBackdrop = document.getElementById('stats-modal-backdrop');
-    
-    statsBtn.onclick = () => {
-        statsBackdrop.style.display = 'flex';
-        updateStats();
-    };
-    
-    function updateStats() {
-        if (!lastState) return;
-        const s = lastState;
-        document.getElementById('stat-total-ever').innerText = formatNumber(s.totalCellsEver || 0);
-        document.getElementById('stat-total-clicks').innerText = formatNumber(s.totalClicks || 0);
-        document.getElementById('stat-boosts-unlocked').innerText = (s.purchasedBoosts ? s.purchasedBoosts.length : 0);
-        document.getElementById('stat-prestige').innerText = formatNumber(s.prestigePoints || 0);
-        
-        document.getElementById('stat-current-score').innerText = formatNumber(currentScore);
-        document.getElementById('stat-current-cps').innerText = formatNumber(s.cellsPerSecond || 0) + " CI/s";
-        document.getElementById('stat-local-clicks').innerText = mySessionClicks;
-        document.getElementById('stat-session-time').innerText = formatTime(Date.now() - sessionStartTime);
-        
-        if(statsBackdrop.style.display === 'flex') {
-            requestAnimationFrame(updateStats);
-        }
     }
 
-    // Initialisation au chargement
-    applySettings();
-
-    socket.on('tick_update', (d) => { 
-      if(!lastState) return; 
-      lastState.totalInfectedCells = d.score; 
-      lastState.cellsPerSecond = d.cps; 
-      currentClickValue = d.clickValue; 
-      lastUpdate = Date.now(); 
-      
-      const hue_cell = Math.min(d.clickHeat*0.8, 120); 
-
-      document.getElementById('player-count').innerText = 'SCIENTIFIQUES : ' + d.players; 
-      document.getElementById('cps-display').innerText = '+' + formatNumber(d.cps) + ' CI/s'; 
-      document.getElementById('click-info').innerText = 'PUISSANCE: +' + formatNumber(d.clickValue); 
-      
-      if(d.leaderboard) { 
-        leaderboardList.innerHTML = ''; 
-        d.leaderboard.forEach(p => { 
-          const li = document.createElement('li'); 
-          li.innerHTML = `<span class="lb-name">${p.name}</span> <div style="text-align:right"><span class="lb-score">${formatNumber(p.contribution)}</span><small style="color:#666; font-size:0.8em; margin-left:5px;">(${p.clicks} 🖱️)</small></div>`; 
-          leaderboardList.appendChild(li); 
-        }); 
-      } 
-    });
-
-    socket.on('full_update', (d) => { lastState = d.gameState; lastUpdate = Date.now(); prestigeUpgradesList = d.prestigeUpgrades; const s = lastState; const update = (key, cKey, gKey, cntKey) => { const el = document.getElementById(builds[key]); if(el) { const cost = s[cKey]; const gain = s[gKey]; const count = s[cntKey]; el.querySelector('.item-cost').innerText = formatNumber(cost); el.querySelector('.item-cost').dataset.raw = cost; el.querySelector('.item-count').innerText = count; el.querySelector('.item-gain').innerText = `+${formatNumber(gain)} CI/s`; el.querySelector('.item-gain').dataset.raw = gain; } }; 
-    update('mutation_mineure', 'cost_mutation', 'gain_mutation', 'mutations_mineures'); update('vecteur_oiseau', 'cost_oiseau', 'gain_oiseau', 'vecteurs_oiseaux'); update('contamination_eau', 'cost_eau', 'gain_eau', 'contamination_eau'); update('transmission_aerosol', 'cost_aerosol', 'gain_aerosol', 'transmission_aerosol'); update('aeroport_international', 'cost_aeroport', 'gain_aeroport', 'aeroport_international'); update('fermes_virales', 'cost_ferme', 'gain_ferme', 'fermes_virales'); update('centres_contagion', 'cost_centre', 'gain_centre', 'centres_contagion'); update('propagande_virale', 'cost_propagande', 'gain_propagande', 'propagande_virale'); update('satellite_dispersion', 'cost_satellite', 'gain_satellite', 'satellite_dispersion'); update('clonage_humain', 'cost_clonage', 'gain_clonage', 'clonage_humain'); update('terraformation_virale', 'cost_terraformation', 'gain_terraformation', 'terraformation_virale'); update('singularite_biologique', 'cost_singularite', 'gain_singularite', 'singularite_biologique'); 
-    update('echos_dimensionnels', 'cost_echo', 'gain_echo', 'echos_dimensionnels'); update('nanobots_autoreplicants', 'cost_nano', 'gain_nano', 'nanobots_autoreplicants'); update('supernova_virale', 'cost_nova', 'gain_nova', 'supernova_virale');
-
-    const boostCont = document.getElementById('boost-container'); boostCont.innerHTML = ''; for(const b of d.availableBoosts) { const el = document.createElement('div'); el.className = 'boost-item'; let ico = '❓'; if(b.id.includes('seringue') || b.id.includes('gants')) ico='🧤'; else if(b.id.includes('doigts')) ico='🦾'; else if(b.id.includes('rage')) ico='🩸'; else if(b.id.includes('osmose')) ico='⚡'; else if(b.id.includes('neurones')) ico='🧠'; else if(b.id.includes('clics')) ico='🖱️'; else if(b.id.includes('mutation')) ico='🧬'; else if(b.id.includes('plumes')||b.id.includes('oiseau')) ico='🪶'; else if(b.id.includes('filtres')||b.id.includes('eau')) ico='💧'; else if(b.id.includes('spores')||b.id.includes('aerosol')) ico='💨'; else if(b.id.includes('partenariats')||b.id.includes('aeroport')) ico='✈️'; else if(b.id.includes('nutriments')||b.id.includes('ferme')) ico='🌿'; else if(b.id.includes('gentrification')||b.id.includes('centre')) ico='🏙️'; else if(b.id.includes('fake')||b.id.includes('propagande')) ico='📰'; else if(b.id.includes('sat')) ico='📡'; else if(b.id.includes('clone')) ico='👯'; else if(b.id.includes('terra')) ico='🌍'; else if(b.id.includes('singu')) ico='🌌'; else if(b.id.includes('matrice')) ico='💠'; else if(b.id.includes('synergie')) ico='🔗'; else if(b.id.includes('contamination')) ico='☣️'; 
-    else if(b.id.includes('echo')) ico='🌌'; else if(b.id.includes('nano')) ico='🤖'; else if(b.id.includes('nova')) ico='💥'; else if(b.id.includes('omnipotence')) ico='👑'; else if(b.id.includes('doigt')) ico='👆';
-
-    el.innerText = ico; el.onclick = () => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; if(currentScore >= cost) { socket.emit('buy_boost', b.id); el.remove(); Sound.buy(); } else { el.classList.add('error-anim'); setTimeout(()=>el.classList.remove('error-anim'),300); } }; el.onmouseenter = (e) => { let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; showTip(e, b.name, cost, b.description); }; el.onmousemove = moveTip; el.onmouseleave = hideTip; let cost = b.cost; if(s.purchasedPrestigeUpgrades.includes('p_recherche_acceleree')) cost *= 0.9; el.dataset.cost = cost; boostCont.appendChild(el); } const pInfo = d.prestigeInfo; const pArea = document.getElementById('prestige-area'); if(pInfo.canPrestige || s.prestigePoints > 0) { pArea.style.display = 'block'; document.getElementById('p-gain').innerText = formatNumber(pInfo.pointsOnReset); document.getElementById('p-total').innerText = formatNumber(s.prestigePoints); } else { pArea.style.display = 'none'; } renderPrestigeShop(); });
-    function renderPrestigeShop() { if(!lastState) return; const body = document.getElementById('modal-body'); body.innerHTML = ''; for(const id in prestigeUpgradesList) { const u = prestigeUpgradesList[id]; const row = document.createElement('div'); row.className = 'p-upgrade'; row.innerHTML = `<div><h4>${u.name}</h4><div class="description">${u.description}</div></div><div class="cost">${u.cost} PR</div>`; const isBought = lastState.purchasedPrestigeUpgrades.includes(id); const canBuy = lastState.prestigePoints >= u.cost; if(isBought) row.classList.add('purchased'); else if(!canBuy) row.classList.add('disabled'); row.onclick = () => { if(!isBought && canBuy) { socket.emit('buy_prestige_upgrade', id); row.classList.add('purchased'); Sound.buy(); } else if (!isBought) { row.classList.add('error-anim'); setTimeout(()=>row.classList.remove('error-anim'),300); } }; body.appendChild(row); } }
-    function spawnParticle(src, n) { if (!userSettings.particles) return; const rect = src.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const area = document.getElementById('game-area').getBoundingClientRect(); for(let i=0; i<n; i++) { const p = document.createElement('div'); p.className = 'particle'; const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px'; p.style.left = (rect.left - area.left + rect.width/2)+'px'; p.style.top = (rect.top - area.top + rect.height/2)+'px'; const tx = (dest.left - rect.left) + (Math.random()-0.5)*50; const ty = (dest.top - rect.top) + (Math.random()-0.5)*50; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); partCont.appendChild(p); setTimeout(()=>p.remove(), 1000); } }
-    function spawnPassive() { if (!userSettings.particles) return; const rect = storeEl.getBoundingClientRect(); const dest = scoreEl.getBoundingClientRect(); const p = document.createElement('div'); p.className='passive-particle'; const s = Math.random()*3+2; p.style.width=s+'px'; p.style.height=s+'px'; const startY = Math.random() * window.innerHeight; p.style.left = rect.left+'px'; p.style.top = startY+'px'; const tx = dest.left - rect.left + 50; const ty = (dest.top + 20) - startY; p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px'); passPartCont.appendChild(p); setTimeout(()=>p.remove(), 2000); }
-
-    function render() { 
-      try { 
-        if(lastState) { 
-          const delta = Date.now() - lastUpdate; 
-          const cps = lastState.cellsPerSecond || 0; 
-          const pred = lastState.totalInfectedCells + (cps/1000 * delta); 
-          currentScore = Math.floor(pred); 
-          scoreEl.innerText = isNaN(currentScore) ? "0" : formatNumber(currentScore); 
-          
-          document.title = formatNumber(currentScore) + " CI - Genèse";
-
-          for(let k in builds) { 
-              const el = document.getElementById(builds[k]); 
-              if(el) { 
-                const cost = parseFloat(el.querySelector('.item-cost').dataset.raw || 0);
-                const count = parseInt(el.querySelector('.item-count').innerText || 0);
-                const threshold = cost * 0.6; 
-                
-                if (count > 0 || currentScore >= threshold) {
-                  if (!el.classList.contains('revealed')) {
-                      el.classList.add('revealed');
-                  }
-                }
-
-                if (el.classList.contains('revealed')) {
-                    el.style.opacity = (currentScore >= cost) ? 1 : 0.5; 
-                    el.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; 
-                }
-              } 
-          }
-          
-          const bItems = document.getElementsByClassName('boost-item'); 
-          for(let b of bItems) { 
-              const cost = parseFloat(b.dataset.cost); 
-              b.style.opacity = (currentScore >= cost) ? 1 : 0.5; 
-              b.style.cursor = (currentScore >= cost) ? 'pointer' : 'not-allowed'; 
-          } 
-          
-          if(cps > 0 && userSettings.particles) { 
-              const chance = Math.log10(cps+1) * 0.05; 
-              if(Math.random() < chance) spawnPassive(); 
-          } 
-        } 
-      } catch(e) { 
-          console.error("Erreur rendu", e); 
-      } 
-      requestAnimationFrame(render); 
-    } 
-    requestAnimationFrame(render);
-
-    (function initBioBackground() {
-      const canvas = document.getElementById('bio-canvas');
-      const ctx = canvas.getContext('2d');
-      let w, h;
-      
-      class BioParticle {
-        constructor() {
-          this.x = Math.random() * w;
-          this.y = Math.random() * h;
-          this.vx = (Math.random() - 0.5) * 0.5;
-          this.vy = (Math.random() - 0.5) * 0.5;
-          this.radius = Math.random() * 15 + 5;
-          this.alpha = Math.random() * 0.1 + 0.05;
-          this.pulseSpeed = Math.random() * 0.02 + 0.005;
-          this.pulse = 0;
-        }
-        update() {
-          this.x += this.vx;
-          this.y += this.vy;
-          this.pulse += this.pulseSpeed;
-          if(this.x < -50) this.x = w+50; if(this.x > w+50) this.x = -50;
-          if(this.y < -50) this.y = h+50; if(this.y > h+50) this.y = -50;
-        }
-        draw() {
-          const r = this.radius + Math.sin(this.pulse) * 2;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, r, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha})`;
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, r * 0.4, 0, Math.PI*2);
-          ctx.fillStyle = `rgba(63, 185, 80, ${this.alpha + 0.1})`;
-          ctx.fill();
-        }
-      }
-      
-      const particles = [];
-      const numParticles = 40;
-      
-      function resize() {
-        w = canvas.width = window.innerWidth;
-        h = canvas.height = window.innerHeight;
-      }
-      window.addEventListener('resize', resize);
-      resize();
-      
-      for(let i=0; i<numParticles; i++) particles.push(new BioParticle());
-      
-      function animate() {
-        ctx.clearRect(0, 0, w, h);
+    // --- INTERACTION JEU (Original) ---
+    const cellBtn = document.getElementById('cell-button');
+    cellBtn.onclick = (e) => {
+        if(!e.isTrusted || !socket) return;
+        socket.emit('click_cell');
+        Sound.click();
         
-        ctx.strokeStyle = 'rgba(63, 185, 80, 0.05)';
-        ctx.lineWidth = 1;
-        for(let i=0; i<particles.length; i++) {
-          const p1 = particles[i];
-          p1.update();
-          p1.draw();
-          for(let j=i+1; j<particles.length; j++) {
-            const p2 = particles[j];
-            const dx = p1.x - p2.x;
-            const dy = p1.y - p2.y;
-            const dist = Math.sqrt(dx*dx + dy*dy);
-            if(dist < 150) {
-              ctx.beginPath();
-              ctx.moveTo(p1.x, p1.y);
-              ctx.lineTo(p2.x, p2.y);
-              ctx.stroke();
-            }
-          }
+        // Ripple FX
+        const ripple = document.createElement('div'); ripple.className = 'ripple';
+        const rect = cellBtn.getBoundingClientRect();
+        ripple.style.width = ripple.style.height = rect.width + 'px';
+        ripple.style.left = (e.clientX - rect.left - rect.width/2) + 'px';
+        ripple.style.top = (e.clientY - rect.top - rect.height/2) + 'px';
+        cellBtn.appendChild(ripple); setTimeout(() => ripple.remove(), 600);
+        
+        cellBtn.classList.add('clicked'); setTimeout(()=>cellBtn.classList.remove('clicked'),100);
+        spawnFloatingText(e, "+?"); // Value updated by server tick
+        spawnParticle(cellBtn, 5);
+    };
+
+    // --- CLICK HANDLERS MAGASIN (Mapping Legacy -> Server Secure) ---
+    const binds = {
+        'b-mutation': 'mutation_mineure', 'b-oiseau': 'vecteur_oiseau', 'b-eau': 'contamination_eau',
+        'b-aerosol': 'transmission_aerosol', 'b-aeroport': 'aeroport_international', 'b-ferme': 'fermes_virales',
+        'b-centre': 'centres_contagion', 'b-propagande': 'propagande_virale', 'b-satellite': 'satellite_dispersion',
+        'b-clonage': 'clonage_humain', 'b-terraformation': 'terraformation_virale', 'b-singularite': 'singularite_biologique',
+        'b-echo': 'echos_dimensionnels', 'b-nano': 'nanobots_autoreplicants', 'b-nova': 'supernova_virale'
+    };
+    for(const [btnId, serverId] of Object.entries(binds)) {
+        const el = document.getElementById(btnId);
+        el.onclick = () => {
+             if(socket) { socket.emit('buy_upgrade', serverId); Sound.buy(); }
+        };
+    }
+
+    // --- PARTICLES & FX (Keep Original) ---
+    const partCont = document.getElementById('particle-container');
+    function spawnParticle(src, n) {
+        const rect = src.getBoundingClientRect();
+        for(let i=0; i<n; i++) {
+            const p = document.createElement('div'); p.className = 'particle';
+            const s = Math.random()*8+4; p.style.width=s+'px'; p.style.height=s+'px';
+            p.style.left = (rect.left + rect.width/2)+'px'; p.style.top = (rect.top + rect.height/2)+'px';
+            const tx = (Math.random()-0.5)*200; const ty = (Math.random()-0.5)*200;
+            p.style.setProperty('--tx', tx+'px'); p.style.setProperty('--ty', ty+'px');
+            partCont.appendChild(p); setTimeout(()=>p.remove(), 1000);
         }
-        requestAnimationFrame(animate);
+    }
+    function spawnFloatingText(e, txt) {
+        const el = document.createElement('div'); el.className = 'float-text'; el.innerText = txt;
+        el.style.left = e.clientX + 'px'; el.style.top = e.clientY + 'px';
+        document.body.appendChild(el); setTimeout(() => el.remove(), 800);
+    }
+
+    // --- INTRO & CHAT ---
+    const BRIEFING = "IDENTIFICATION CONFIRMÉE.\nBienvenue dans le Projet Genèse.";
+    function launchContextSequence() {
+        const overlay = document.getElementById('context-overlay');
+        const txt = document.getElementById('context-text');
+        const btn = document.getElementById('start-mission-btn');
+        
+        // Si l'utilisateur a déjà vu l'intro (optionnel, ici on affiche si token nouveau)
+        overlay.style.display = 'flex';
+        txt.innerText = BRIEFING;
+        btn.style.display = 'block';
+        btn.onclick = () => { overlay.style.display = 'none'; Sound.buy(); };
+    }
+
+    const chatForm = document.getElementById('chat-form');
+    chatForm.onsubmit = (e) => {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        if(!input.value) return;
+        fetch('/api/chat', {
+            method:'POST', 
+            headers: {'Content-Type':'application/json', 'Authorization': 'Bearer '+localStorage.getItem('viral_token')},
+            body: JSON.stringify({text: input.value})
+        }).then(()=>input.value='');
+    }
+    // Polling chat
+    setInterval(() => {
+        fetch('/api/chat').then(r=>r.json()).then(msgs => {
+            const box = document.getElementById('chat-messages');
+            box.innerHTML = ''; // Simplifié pour l'exemple
+            msgs.forEach(m => {
+                box.innerHTML += `<div class="msg"><span class="msg-user">${m.user}:</span> <span class="msg-text">${m.text}</span></div>`;
+            });
+        });
+    }, 3000);
+
+    // --- BACKGROUND CANVAS ---
+    (function initBioBackground() {
+      const canvas = document.getElementById('bio-canvas'); const ctx = canvas.getContext('2d');
+      let w, h; const particles = [];
+      function resize() { w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight; }
+      window.addEventListener('resize', resize); resize();
+      class P {
+        constructor() { this.x=Math.random()*w; this.y=Math.random()*h; this.vx=(Math.random()-0.5)*0.5; this.vy=(Math.random()-0.5)*0.5; this.r=Math.random()*15+5; this.a=Math.random()*0.1+0.05; }
+        update() { this.x+=this.vx; this.y+=this.vy; if(this.x<0||this.x>w) this.vx*=-1; if(this.y<0||this.y>h) this.vy*=-1; }
+        draw() { ctx.beginPath(); ctx.arc(this.x,this.y,this.r,0,6.28); ctx.fillStyle=`rgba(63,185,80,${this.a})`; ctx.fill(); }
       }
-      animate();
+      for(let i=0; i<40; i++) particles.push(new P());
+      function anim() { ctx.clearRect(0,0,w,h); particles.forEach(p=>{p.update();p.draw();}); requestAnimationFrame(anim); }
+      anim();
     })();
   </script>
 </body>
